@@ -5,7 +5,7 @@ from dataclasses import asdict
 from hashlib import sha256
 from hmac import compare_digest
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -124,6 +124,7 @@ class RecommendationRequest(BaseModel):
 
 
 class PromptRequest(RecommendationRequest):
+    policy: Literal["popular", "adaptive"] = "adaptive"
     shown: Annotated[
         list[Annotated[int, Field(gt=0)]], Field(max_length=PROMPT_LIMIT)
     ] = Field(default_factory=list)
@@ -229,6 +230,7 @@ def create_app(model: Recommender | None = None) -> FastAPI:
             api.state.model,
             {rating.movie_id: rating.stars for rating in profile.ratings},
             list(dict.fromkeys(profile.shown)),
+            profile.policy,
         )
 
     @api.post("/api/recommend")

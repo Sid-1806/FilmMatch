@@ -1,6 +1,7 @@
 import json
 import unicodedata
 from dataclasses import asdict, dataclass
+from itertools import islice
 from pathlib import Path
 
 import numpy as np
@@ -86,11 +87,12 @@ class Recommender:
         sparse.save_npz(directory / "neighbors.npz", self.neighbors)
 
     def prompts(self, excluded: set[int], limit: int = 5) -> list[Movie]:
-        return [
+        eligible = (
             self.movies[i]
             for i in self.popular
             if self.movies[i].rating_count and self.movies[i].id not in excluded
-        ][:limit]
+        )
+        return list(islice(eligible, limit))
 
     def score(self, ratings: dict[int, float]) -> tuple[np.ndarray, dict[int, float]]:
         scores = np.zeros(len(self.movies), dtype=np.float32)

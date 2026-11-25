@@ -1,0 +1,117 @@
+{
+  "dataset": "ml-32m",
+  "archive_sha256": "e4a68655d7386b8f95f2f2424b2ff975dfdd15ffd59e0d864a14dca43e99d6ee",
+  "split_sha256": "506c86943f7fbf593196bf22850563e049f0c4c1c43b87c66b1a96d489d12a2c",
+  "corpus_sha256": "6c3bd3d42046c4b87e2267f2e2599ba6f651b8ad23a8998237c3d2bb338ac559",
+  "source_model_sha": "4023557091704274206ce0b5519a8fbc9b48c33b",
+  "neighbors_sha256": "8b069f268bcf6436aea08b7f4d9eb83f4b40233edb4ed34298fceb604d598317",
+  "code_sha": "0e3a35fa26790ef37daeee30b35145a33d73d8b5",
+  "seed": 42,
+  "sampled_users": 50000,
+  "catalog_size": 87585,
+  "descriptions": 18587,
+  "cold_candidates": 3027,
+  "config": {
+    "prompt_budget": 5,
+    "prompt_pool": 200,
+    "text_weight": 0.75,
+    "cold_profile_max_likes": 5,
+    "bootstrap_samples": 2000,
+    "sklearn": "1.5.1",
+    "numpy": "1.26.4"
+  },
+  "prompt_replay": {
+    "validation": {
+      "users": 582,
+      "ndcg_at_10": {
+        "popular": 0.26560463913339794,
+        "genre_balanced": 0.2610421397789385,
+        "adaptive": 0.26131565358301856
+      },
+      "paired_differences": {
+        "adaptive_minus_popular": {
+          "difference": -0.00428898555037935,
+          "ci95": [
+            -0.00720694766350812,
+            -0.0018575046223035276
+          ]
+        },
+        "adaptive_minus_genre_balanced": {
+          "difference": 0.00027351380408006693,
+          "ci95": [
+            -0.0022071677025953806,
+            0.0028383615402688624
+          ]
+        }
+      },
+      "skip_rate": {
+        "popular": 0.7883161512027491,
+        "genre_balanced": 0.8316151202749141,
+        "adaptive": 0.8243986254295533
+      }
+    },
+    "test": {
+      "users": 555,
+      "ndcg_at_10": {
+        "popular": 0.23953361526293268,
+        "genre_balanced": 0.23415248226820265,
+        "adaptive": 0.2366167973687582
+      },
+      "paired_differences": {
+        "adaptive_minus_popular": {
+          "difference": -0.002916817894174472,
+          "ci95": [
+            -0.005804576489069026,
+            -0.0001366048350086158
+          ]
+        },
+        "adaptive_minus_genre_balanced": {
+          "difference": 0.002464315100555537,
+          "ci95": [
+            0.00030822083669889403,
+            0.005027332337773205
+          ]
+        }
+      },
+      "skip_rate": {
+        "popular": 0.7700900900900901,
+        "genre_balanced": 0.8194594594594594,
+        "adaptive": 0.8093693693693694
+      }
+    }
+  },
+  "cold_items": {
+    "validation": {
+      "users": 4,
+      "ndcg_at_10": {
+        "genre_only": 0.0,
+        "text_and_genre": 0.0
+      },
+      "paired_differences": {
+        "text_and_genre_minus_genre_only": {
+          "difference": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "test": {
+      "users": 12,
+      "ndcg_at_10": {
+        "genre_only": 0.025547799698560764,
+        "text_and_genre": 0.025547799698560764
+      },
+      "paired_differences": {
+        "text_and_genre_minus_genre_only": {
+          "difference": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    }
+  }
+}

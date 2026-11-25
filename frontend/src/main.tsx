@@ -4,7 +4,8 @@ import './style.css'
 
 type Movie = { id: number; title: string; year: number | null; genres: string[]; rating_count: number }
 type Pick = { movie: Movie; because: string | null; signal: 'ratings' | 'content' | 'popular' }
-type Profile = { ratings: Record<number, { movie: Movie; stars: number }>; answered: number[] }
+type PromptPolicy = 'popular' | 'adaptive'
+type Profile = { ratings: Record<number, { movie: Movie; stars: number }>; answered: number[]; policy: PromptPolicy }
 type Metrics = {
   assigned_users: number; eligible_users: number; popularity_ndcg_at_10?: number;
   itemknn_ndcg_at_10?: number; paired_lift?: number; paired_bootstrap_95_ci?: number[];
@@ -16,16 +17,16 @@ type Comparison = { users: number; ndcg_at_10: Record<string, number>; skip_rate
 type ContextEvidence = { code_sha: string; prompt_replay: Record<string, Comparison>;
   cold_items: Record<string, Comparison>; descriptions: number; catalog_size: number }
 
-const empty: Profile = { ratings: {}, answered: [] }
+const empty: Profile = { ratings: {}, answered: [], policy: 'popular' }
 const storageKey = 'filmmatch.profile.v2'
 const promptLimit = 5
 
 function initialProfile(): Profile {
   try {
     const data = JSON.parse(localStorage.getItem(storageKey) ?? 'null') as Profile | null
-    if (data?.ratings && Array.isArray(data.answered)) return data
+    if (data?.ratings && Array.isArray(data.answered)) return { ...data, policy: data.policy === 'adaptive' ? 'adaptive' : 'popular' }
     const previous = JSON.parse(localStorage.getItem('filmmatch.profile.v1') ?? 'null') as Profile | null
-    return previous?.ratings ? { ratings: previous.ratings, answered: [] } : empty
+    return previous?.ratings ? { ...empty, ratings: previous.ratings } : empty
   } catch { return empty }
 }
 
@@ -135,7 +136,7 @@ function App() {
     if (profile.answered.length >= promptLimit) { setPrompt(null); return }
     setPrompt(undefined)
     api<Movie | null>('/prompt', { method: 'POST', signal: controller.signal, headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shown: profile.answered, ratings: Object.values(profile.ratings).map(({ movie, stars }) => ({ movie_id: movie.id, stars })) }) })
+      body: JSON.stringify({ policy: profile.policy, shown: profile.answered, ratings: Object.values(profile.ratings).map(({ movie, stars }) => ({ movie_id: movie.id, stars })) }) })
       .then(setPrompt).catch(reason => { if (!controller.signal.aborted) setPromptError(reason.message) })
     return () => controller.abort()
   }, [profile])
@@ -167,7 +168,7 @@ function App() {
   const progress = profile.answered.length
   const ratingCount = Object.keys(profile.ratings).length
   const choose = (movie: Movie, stars: number) => {
-    setProfile(current => ({ ratings: { ...current.ratings, [movie.id]: { movie, stars } },
+    setProfile(current => ({ ...current, ratings: { ...current.ratings, [movie.id]: { movie, stars } },
       answered: movie.id === prompt?.id ? [...current.answered, movie.id] : current.answered }))
     if (movie.id === prompt?.id) setPrompt(undefined)
     setSelected(undefined)
@@ -193,6 +194,12 @@ function App() {
         <section className="taste-grid" aria-label="Build your taste profile">
           <div className="panel taste">
             <div className="panel-top"><h2>Rate a movie</h2><span className="progress-label">{progress} / {promptLimit}</span></div>
+            <div className="prompt-policy"><label htmlFor="prompt-style">Prompt style</label>
+              <select id="prompt-style" value={profile.policy} disabled={progress > 0} onChange={event => {
+                const policy = event.target.value as PromptPolicy
+                setPrompt(undefined)
+                setProfile(current => ({ ...current, policy }))
+              }}><option value="popular">Popular</option><option value="adaptive">Adaptive</option></select></div>
             <div className="progress" aria-hidden="true">{Array.from({ length: promptLimit }, (_, i) => <span key={i} className={i < progress ? 'done' : ''} />)}</div>
             {promptError && <p className="prompt" role="alert">{promptError}</p>}
             {prompt === undefined && !promptError && <p className="prompt" role="status">Choosing a movie…</p>}

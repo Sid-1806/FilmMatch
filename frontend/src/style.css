@@ -39,12 +39,15 @@ h1 em { color: var(--gold); font-weight: 400; }
 .panel-top, .prompt-actions, .profile-info, .list-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .taste h2 { font-size: 1rem; }
 .progress-label, .profile-info, .movie-meta { color: var(--muted); font-size: .9rem; }
+.prompt-policy { display: flex; align-items: center; gap: 8px; color: var(--muted); margin-top: 12px; font-size: .9rem; }
+.prompt-policy select { background: #171917; color: #eee9db; border: 1px solid #49483e; border-radius: 5px; min-height: 34px; padding-inline: 7px; color-scheme: dark; }
+.prompt-policy select:disabled { opacity: .8; }
 .progress { margin-top: 14px; display: flex; gap: 5px; }
 .progress span { height: 3px; border-radius: 2px; background: #404139; flex: 1; }
 .progress span.done { background: var(--gold); }
 .prompt { margin-top: 16px; }
 .prompt h3, .pick-grid h3 { font-size: 1.25rem; line-height: 1.22; margin-bottom: 4px; }
-.prompt-actions { margin-top: 8px; }
+.prompt-actions { margin-top: 8px; flex-wrap: wrap; }
 .stars { display: flex; align-items: center; gap: 3px; }
 .stars button { display: grid; place-items: center; width: 33px; height: 40px; padding: 0; border: 0; background: transparent; border-radius: 4px; color: #bdb6a8; font-size: 1.57rem; }
 .stars button:hover, .stars button.filled { color: var(--gold); background: #e7ae6811; }
