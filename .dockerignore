@@ -1,0 +1,12 @@
+.git
+.venv
+.env
+artifacts
+data
+ml-*.zip
+.npm-cache
+**/__pycache__
+frontend/node_modules
+frontend/dist
+frontend/test-results
+frontend/playwright-report

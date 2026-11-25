@@ -1,0 +1,30 @@
+import { expect, test } from '@playwright/test'
+
+test('search, rate, skip, filter, and resume an onboarding profile', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Popular picks' })).toBeVisible()
+  await expect(page.locator('.pick-grid li')).toHaveCount(10)
+  const prompt = page.locator('.prompt h3')
+  const first = await prompt.innerText()
+  await page.getByRole('button', { name: 'Haven’t seen it' }).click()
+  await expect(prompt).not.toHaveText(first)
+  const rated = await prompt.innerText()
+  await page.getByRole('group', { name: `Rate ${rated}`, exact: true }).getByRole('button', { name: '5 stars', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Your shortlist' })).toBeVisible()
+  await expect(page.locator('.pick-grid').getByRole('heading', { name: rated, exact: true })).toHaveCount(0)
+  await page.getByRole('searchbox', { name: 'Search by title' }).fill('Toy Story')
+  await page.getByRole('button', { name: /^Toy Story 1995/ }).click()
+  await page.getByRole('group', { name: 'Rate Toy Story', exact: true }).getByRole('button', { name: '4 stars', exact: true }).click()
+  await expect(page.getByText('2 ratings added')).toBeVisible()
+  await page.getByLabel('Genre', { exact: true }).selectOption('Drama')
+  await page.getByLabel('Decade', { exact: true }).selectOption('1990')
+  await expect(page.locator('.list-header + div')).toHaveAttribute('aria-busy', 'false')
+  for (const movie of await page.locator('.pick-grid .movie-meta').allTextContents()) {
+    expect(movie).toMatch(/^199\d/)
+  }
+  await expect(page.locator('.pick-grid li')).toHaveCount(10)
+  await page.reload()
+  await expect(page.getByText('2 ratings added')).toBeVisible()
+  await page.getByRole('button', { name: 'Start over' }).click()
+  await expect(page.getByRole('heading', { name: 'Popular picks' })).toBeVisible()
+})

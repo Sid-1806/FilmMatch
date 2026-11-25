@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: filmmatch
+      POSTGRES_USER: filmmatch
+      POSTGRES_PASSWORD: ${FILMMATCH_DB_PASSWORD:-filmmatch-local}
+    volumes:
+      - catalog:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD, pg_isready, -U, filmmatch, -d, filmmatch]
+      interval: 3s
+      timeout: 2s
+      retries: 15
+  web:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://filmmatch:${FILMMATCH_DB_PASSWORD:-filmmatch-local}@db:5432/filmmatch
+    ports:
+      - '127.0.0.1:8000:8000'
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=3)']
+      interval: 5s
+      timeout: 4s
+      retries: 15
+volumes:
+  catalog:
