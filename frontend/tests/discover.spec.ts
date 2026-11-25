@@ -28,3 +28,12 @@ test('search, rate, skip, filter, and resume an onboarding profile', async ({ pa
   await page.getByRole('button', { name: 'Start over' }).click()
   await expect(page.getByRole('heading', { name: 'Popular picks' })).toBeVisible()
 })
+
+test('shows the committed validation and test benchmark', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Benchmark' }).click()
+  await expect(page.getByRole('heading', { name: 'The benchmark' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Validation', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Test', exact: true })).toBeVisible()
+  await expect(page.getByText('Popularity NDCG@10')).toHaveCount(2)
+})

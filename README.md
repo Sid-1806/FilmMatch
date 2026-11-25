@@ -6,6 +6,8 @@ FilmMatch helps a new viewer find a movie from a handful of ratings. The project
 
 The app starts with popular movies and updates the top ten after each rating. Search for a title you know, rate or skip a suggested title, and filter the shortlist by genre and decade. An ItemKNN explanation names a rated movie when its similarity contributed positively. Ratings are stored in the browser and sent with recommendation requests.
 
+On the held-out test cohort, ItemKNN scored **0.2395 NDCG@10** and popularity scored **0.2415** across **555 eligible viewers**. The paired difference was **−0.0020**, with a 95% bootstrap interval of **[−0.0058, 0.0017]**. Popularity led on the point estimate, and the interval includes zero. About **77%** of prompts in that replay were simulated skips. [Committed run](benchmarks/release-1.json)
+
 ## Run locally
 
 Start the Docker engine and run the Compose stack.
@@ -14,7 +16,7 @@ Start the Docker engine and run the Compose stack.
 docker compose up --build --wait
 ```
 
-Open [FilmMatch on localhost](http://127.0.0.1:8000). The `web` container builds React, downloads MovieLens Latest Small, trains the development model, and seeds the Postgres search catalog on startup. The API is bound to loopback on the host. Postgres is reachable from the Compose network.
+Open [FilmMatch on localhost](http://127.0.0.1:8088). The `web` container builds React, downloads MovieLens Latest Small, trains the development model, and seeds the Postgres search catalog on startup. The API is bound to loopback on the host. Set `FILMMATCH_PORT` to use another host port. Postgres is reachable from the Compose network.
 
 For local development with Python 3.12 and Node 24 run these commands from the repository root.
 
@@ -25,7 +27,7 @@ python -m filmmatch freeze --archive data/ml-latest-small.zip
 python -m filmmatch train --archive data/ml-latest-small.zip
 npm ci --prefix frontend
 npm run build --prefix frontend
-python -m uvicorn filmmatch.api:app
+python -m uvicorn filmmatch.api:app --port 8088
 ```
 
 `DATABASE_URL` selects Postgres when set. The Python-only command uses the model catalog in memory for local development. Set `FILMMATCH_MODEL` to point the API at another trained artifact directory.
@@ -53,9 +55,9 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Browser tests expect the built app at `http://127.0.0.1:8000`. Set `FILMMATCH_E2E_URL` to test another deployment and `FILMMATCH_BROWSER_CHANNEL` to use an installed Chromium channel.
+Browser tests expect the built app at `http://127.0.0.1:8088`. Set `FILMMATCH_E2E_URL` to test another deployment and `FILMMATCH_BROWSER_CHANNEL` to use an installed Chromium channel.
 
-Set up an Always Free VM with Docker Compose and a TLS reverse proxy to port 8000. Clone the GitHub repository into `~/filmmatch` on the VM. Set a private `FILMMATCH_DB_PASSWORD` in its `.env` using URL-safe characters. Configure the GitHub `production` environment with the variables `FILMMATCH_DEPLOY_HOST` (`user@host`) and `FILMMATCH_PUBLIC_URL`, and the secrets `FILMMATCH_DEPLOY_KEY` and `FILMMATCH_KNOWN_HOSTS`. On a successful push to `main`, CI deploys that tested revision and verifies public health and evidence. Run the desktop and mobile smoke tests against the resulting URL to close the release gate.
+For a public deployment without a payment card, create a Neon Free Postgres database and connect the GitHub repository to Render as a Blueprint. The blueprint uses the Dockerfile and Render Free. Set `DATABASE_URL` in Render to the database's TLS connection string. Subsequent changes to `main` deploy after CI passes. Open `/api/health` and `/api/evidence` on the public URL and run the desktop and mobile smoke tests against that URL to close the release gate. The service can take about a minute to wake after idle time. [Render Free Docker hosting](https://render.com/hosting/docker) · [Connect to Neon](https://neon.com/docs/connect/connect-from-any-app)
 
 ## Data credit
 

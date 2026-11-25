@@ -178,9 +178,9 @@ function App() {
         <section className="recommendations" aria-labelledby="picks-title">
           <div className="list-header"><div><h2 id="picks-title">{ratingCount ? 'Your shortlist' : 'Popular picks'}</h2>
             <p>{ratingCount ? 'Based on the films you rated.' : 'Rate a film to start personalizing these picks.'}</p></div>
-            <div className="filters"><label>Genre<select value={genre} onChange={event => setGenre(event.target.value)}><option value="">All genres</option>{genres.map(item => <option key={item}>{item}</option>)}</select></label>
-              <label>Decade<select value={decade} onChange={event => setDecade(event.target.value)}><option value="">All decades</option>
-                {Array.from({ length: 15 }, (_, i) => 2020 - 10 * i).map(year => <option key={year} value={year}>{year}s</option>)}</select></label></div>
+            <div className="filters"><div><label htmlFor="genre-filter">Genre</label><select id="genre-filter" value={genre} onChange={event => setGenre(event.target.value)}><option value="">All genres</option>{genres.map(item => <option key={item}>{item}</option>)}</select></div>
+              <div><label htmlFor="decade-filter">Decade</label><select id="decade-filter" value={decade} onChange={event => setDecade(event.target.value)}><option value="">All decades</option>
+                {Array.from({ length: 15 }, (_, i) => 2020 - 10 * i).map(year => <option key={year} value={year}>{year}s</option>)}</select></div></div>
           </div>
           <div aria-live="polite" aria-busy={loading}>
             {recommendError ? <p role="alert">{recommendError}</p> : <>

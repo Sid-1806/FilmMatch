@@ -14,10 +14,11 @@ services:
       retries: 15
   web:
     build: .
+    mem_limit: 512m
     environment:
       DATABASE_URL: postgresql://filmmatch:${FILMMATCH_DB_PASSWORD:-filmmatch-local}@db:5432/filmmatch
     ports:
-      - '127.0.0.1:8000:8000'
+      - '127.0.0.1:${FILMMATCH_PORT:-8088}:8000'
     depends_on:
       db:
         condition: service_healthy

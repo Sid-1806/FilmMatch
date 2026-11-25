@@ -1,0 +1,49 @@
+{
+  "archive_sha256": "e4a68655d7386b8f95f2f2424b2ff975dfdd15ffd59e0d864a14dca43e99d6ee",
+  "split_sha256": "506c86943f7fbf593196bf22850563e049f0c4c1c43b87c66b1a96d489d12a2c",
+  "seed": 42,
+  "sample_limit": 50000,
+  "cutoffs": [
+    1538430672,
+    1603595499
+  ],
+  "config": {
+    "neighbors": 100,
+    "shrinkage": 10.0,
+    "prompts": 5,
+    "k": 10,
+    "relevant_stars": 4,
+    "bootstrap_samples": 2000,
+    "numpy": "1.26.4",
+    "scipy": "1.13.1"
+  },
+  "code_sha": "4023557091704274206ce0b5519a8fbc9b48c33b",
+  "dataset": "ml-32m",
+  "sampled_users": 50000,
+  "metrics": {
+    "validation": {
+      "eligible_users": 582,
+      "assigned_users": 5000,
+      "popularity_ndcg_at_10": 0.2647702961965392,
+      "itemknn_ndcg_at_10": 0.26560463913339794,
+      "paired_lift": 0.0008343429368587019,
+      "paired_bootstrap_95_ci": [
+        -0.0019554332712335616,
+        0.00390216724137351
+      ],
+      "simulated_skip_rate": 0.7883161512027492
+    },
+    "test": {
+      "eligible_users": 555,
+      "assigned_users": 5000,
+      "popularity_ndcg_at_10": 0.24151603267554142,
+      "itemknn_ndcg_at_10": 0.23953361526293268,
+      "paired_lift": -0.0019824174126087265,
+      "paired_bootstrap_95_ci": [
+        -0.0057729155887983686,
+        0.0016720099064565451
+      ],
+      "simulated_skip_rate": 0.7700900900900901
+    }
+  }
+}

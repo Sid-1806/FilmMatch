@@ -67,7 +67,8 @@ h1 em { color: var(--gold); font-weight: 400; }
 .list-header { gap: 18px; align-items: end; margin-bottom: 18px; }
 .list-header p { color: var(--muted); margin-top: 5px; }
 .filters { display: flex; gap: 9px; }
-.filters label { display: grid; gap: 4px; color: var(--muted); font-size: .88rem; }
+.filters > div { display: grid; gap: 4px; }
+.filters label { color: var(--muted); font-size: .88rem; }
 .filters select { color: #f2ecdf; border: 1px solid #49483e; border-radius: 7px; min-height: 42px; padding: 0 26px 0 9px; background: #20211d; color-scheme: dark; }
 .pick-grid { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0; margin: 0; list-style: none; }
 .pick-grid li { min-height: 125px; border-top: 1px solid #4b4839; background: #1a1c19; padding: 16px; border-radius: 0 0 7px 7px; }
