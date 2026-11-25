@@ -27,6 +27,8 @@ jobs:
         working-directory: frontend
       - run: docker compose up --build --wait
       - run: npm run test:e2e --prefix frontend
+        env:
+          FILMMATCH_E2E_ADMIN_TOKEN: filmmatch-local-admin
       - if: failure()
         run: docker compose logs
       - if: always()

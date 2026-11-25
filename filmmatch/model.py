@@ -63,6 +63,7 @@ class Recommender:
         self.movies = movies
         self.index = {movie.id: i for i, movie in enumerate(movies)}
         self.neighbors = neighbors
+        self.rating_counts = np.asarray([movie.rating_count for movie in movies])
         self.popular = np.array(
             sorted(
                 range(len(movies)),
@@ -91,6 +92,35 @@ class Recommender:
             if self.movies[i].rating_count and self.movies[i].id not in excluded
         ][:limit]
 
+    def score(self, ratings: dict[int, float]) -> tuple[np.ndarray, dict[int, float]]:
+        scores = np.zeros(len(self.movies), dtype=np.float32)
+        strengths = {
+            self.index[movie_id]: stars - 3
+            for movie_id, stars in ratings.items()
+            if movie_id in self.index and stars != 3
+        }
+        for row, strength in strengths.items():
+            left, right = self.neighbors.indptr[row : row + 2]
+            scores[self.neighbors.indices[left:right]] += (
+                self.neighbors.data[left:right] * strength
+            )
+        return scores, strengths
+
+    def anchor(
+        self, position: int, scores: np.ndarray, strengths: dict[int, float]
+    ) -> Movie | None:
+        if scores[position] <= 0:
+            return None
+        contribution, row = max(
+            (
+                (float(self.neighbors[row, position]) * weight, row)
+                for row, weight in strengths.items()
+                if weight > 0
+            ),
+            default=(0, 0),
+        )
+        return self.movies[row] if contribution > 0 else None
+
     def recommend(
         self,
         ratings: dict[int, int | float],
@@ -102,22 +132,9 @@ class Recommender:
         personalized: bool = True,
     ) -> list[tuple[Movie, Movie | None]]:
         selected = self.popular
-        scores = np.zeros(len(self.movies), dtype=np.float32)
-        strengths: dict[int, float] = {}
-        if personalized:
-            for movie_id, rating in ratings.items():
-                if movie_id not in self.index or rating == 3:
-                    continue
-                row = self.index[movie_id]
-                strengths[row] = rating - 3
-                left, right = self.neighbors.indptr[row : row + 2]
-                scores[self.neighbors.indices[left:right]] += (
-                    self.neighbors.data[left:right] * strengths[row]
-                )
-            if strengths:
-                selected = self.popular[
-                    np.argsort(-scores[self.popular], kind="stable")
-                ]
+        scores, strengths = self.score(ratings if personalized else {})
+        if strengths:
+            selected = self.popular[np.argsort(-scores[self.popular], kind="stable")]
         result = []
         for idx in selected:
             movie = self.movies[idx]
@@ -133,18 +150,7 @@ class Recommender:
                 )
             ):
                 continue
-            anchor = None
-            if scores[idx] > 0:
-                contributions = [
-                    (float(self.neighbors[row, idx]) * weight, row)
-                    for row, weight in strengths.items()
-                    if weight > 0
-                ]
-                if contributions:
-                    contribution, row = max(contributions)
-                    if contribution > 0:
-                        anchor = self.movies[row]
-            result.append((movie, anchor))
+            result.append((movie, self.anchor(idx, scores, strengths)))
             if len(result) == limit:
                 break
         return result

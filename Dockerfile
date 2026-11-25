@@ -14,6 +14,7 @@ COPY filmmatch ./filmmatch
 RUN python -m filmmatch.download ml-latest-small \
     && python -m filmmatch freeze --archive data/ml-latest-small.zip \
     && python -m filmmatch train --archive data/ml-latest-small.zip \
+    && python -m filmmatch.content \
     && python -m zipfile -e data/ml-latest-small.zip /tmp/movielens \
     && cp /tmp/movielens/ml-latest-small/README.txt artifacts/model/License.txt \
     && rm -rf data /tmp/movielens

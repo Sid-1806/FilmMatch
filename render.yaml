@@ -12,3 +12,5 @@ services:
         value: '8000'
       - key: DATABASE_URL
         sync: false
+      - key: FILMMATCH_ADMIN_TOKEN
+        generateValue: true

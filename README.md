@@ -8,6 +8,14 @@ The app starts with popular movies and updates the top ten after each rating. Se
 
 On the held-out test cohort, ItemKNN scored **0.2395 NDCG@10** and popularity scored **0.2415** across **555 eligible viewers**. The paired difference was **−0.0020**, with a 95% bootstrap interval of **[−0.0058, 0.0017]**. Popularity led on the point estimate, and the interval includes zero. About **77%** of prompts in that replay were simulated skips. [Committed run](benchmarks/release-1.json)
 
+## Release 2 · adaptive prompts and new movies
+
+Adaptive prompts come from a popular pool and favor genres the visitor has rated least. A skip spends one prompt and removes that title from later prompts. The feed blends rating similarity with description and genre similarity and can rank new movies from content alone.
+
+Administrators submit `{title, description, genres, year}` to `POST /api/admin/movies` with an `Authorization: Bearer` token and an `Idempotency-Key`. Poll `GET /api/admin/movies/{id}` with the same token. Postgres persists the job. A worker in the service retries transient processing errors and adds the new title to the feed without refitting the vectorizer. Render generates `FILMMATCH_ADMIN_TOKEN` in the service environment. The local Compose stack supplies a development token for integration tests.
+
+Plot summaries come from the CMU Movie Summary Corpus under CC BY-SA. The join uses normalized title and release year and accepts unique matches. The cold-item experiment uses only uniquely matched titles from the 2012 Wikipedia snapshot whose first MovieLens rating was after the fit cutoff. The genre-only and text-plus-genre runs rank the same candidates. The prompt replay holds ItemKNN fixed across policies. [CMU corpus](https://www.cs.cmu.edu/~ark/personas/) · [Bamman, O’Connor, and Smith, ACL 2013](https://aclanthology.org/P13-1035/)
+
 ## Run locally
 
 Start the Docker engine and run the Compose stack.
@@ -25,6 +33,7 @@ python -m pip install -r requirements-dev.txt
 python -m filmmatch.download ml-latest-small
 python -m filmmatch freeze --archive data/ml-latest-small.zip
 python -m filmmatch train --archive data/ml-latest-small.zip
+python -m filmmatch.content
 npm ci --prefix frontend
 npm run build --prefix frontend
 python -m uvicorn filmmatch.api:app --port 8088
@@ -42,6 +51,8 @@ python -m filmmatch freeze --archive data/ml-32m.zip --split artifacts/split-32m
 python -m filmmatch train --archive data/ml-32m.zip --split artifacts/split-32m.json --artifacts artifacts/model-32m --publish
 python -m filmmatch eval --archive data/ml-32m.zip --split artifacts/split-32m.json --artifacts artifacts/model-32m --publish
 ```
+
+To reproduce the release 2 experiments, keep those artifacts and switch to the source revision in the release 2 run record. Run `python -m filmmatch.content` to fetch the CMU corpus and then `python -m filmmatch.release_two`.
 
 Select users with a seeded hash before splitting them into disjoint fit, validation, and test cohorts. Use global chronological cutoffs. Each evaluated profile receives the same popular prompts. A prior rating answers a prompt and an absent rating is a simulated skip. Relevant items have a later rating of at least four stars, were available in the fit catalog, and lack a prior rating from that user. The report includes eligible user counts and a paired bootstrap interval for the difference in NDCG@10. The small archive exercises the pipeline locally. [Committed benchmark records](benchmarks/README.md)
 
