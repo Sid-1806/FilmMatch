@@ -26,6 +26,20 @@ On the frozen warm-item comparison with shared content scores and fixed prompts,
 
 Profiling identified the sparse text product and full catalog copies on the recommendation path. Keeping the catalog sparse and densifying only the handful of profile vectors reduced local API p95 from **31.65 ms** to **27.00 ms** and p50 from **19.82 ms** to **15.03 ms**. Both runs delivered all **300 requests** at an offered **20 requests per second** with identical response hashes. These are laptop Docker measurements. [Performance run](benchmarks/release-3-performance.json)
 
+## Release 4 · WhatsApp pilot
+
+The pilot link is `/?pilot=1`. Participants opt in and see both prompt styles in counterbalanced order. A random choice starts each pair of enrollments, and the next enrollment gets the opposite order. Each round begins with an empty taste profile and uses the same ItemKNN and content scorer. Each rating or skip spends one of five prompts. Participants choose one movie from each shortlist or indicate that none fit, then state which round worked better.
+
+Postgres stores anonymous trial progress. The browser resumes its current step after a reload and repeated submissions count once. `/api/pilot/summary` returns aggregate starts, paired completions, preferences, picks, skips, and median time among successful rounds. Times include the full interval from the round start to shortlist submission. The pilot is a small convenience sample. The comparison can reveal usability issues and differences in this group. Pilot outcomes and any resulting product changes go in the case study after real responses arrive.
+
+## Case study
+
+**Which five questions should a movie recommender ask?** I held the recommender and prompt budget fixed and replayed the same held-out viewers across three prompt policies. The adaptive rule traded familiar titles for genre coverage. It increased simulated skips and lost to popular prompts, so the live flow defaults to popular prompts and keeps adaptive prompts available to try. The replay treats a missing rating as a skip. The volunteer pilot checks whether that pattern also appears when people can answer the prompts themselves. [Prompt experiment](benchmarks/release-2.json)
+
+**How do we serve new movies?** A Postgres job adds a title to the search catalog and transforms its description with the existing TF-IDF vocabulary. The ingest test verifies that the same key returns the same movie ID. The held-out cold-item sample was too small to establish a benefit from text. [Cold-item experiment](benchmarks/release-2.json)
+
+**What earned its place in production?** ItemKNN won on validation and kept its lead on test, so I made it the default and exposed both rankers in Model Lab. Profiling then identified a sparse matrix operation that dominated the content-scoring path. Using a dense representation for only the small profile side lowered request latency while preserving the ordered response hashes. [Model comparison](benchmarks/release-3.json) · [Performance record](benchmarks/release-3-performance.json)
+
 ## Run locally
 
 Start the Docker engine and run the Compose stack.

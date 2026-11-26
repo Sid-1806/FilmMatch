@@ -99,6 +99,20 @@ h1 em { color: var(--gold); font-weight: 400; }
 .lab-table th, .lab-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); }
 .lab-table thead th { color: var(--muted); }
 .lab-results { margin-top: 35px; }
+.pilot { max-width: 760px; padding-block: 54px; }
+.pilot h1 { font-size: clamp(3rem, 10vw, 6.7rem); }
+.pilot-home { text-decoration: none; }
+.pilot-panel, .pilot-shortlist { margin-top: 23px; }
+.pilot-panel { padding: 22px; }
+.pilot-panel h2, .pilot-shortlist h2 { font: 400 2rem Georgia, serif; }
+.pilot-panel p { color: var(--muted); margin-block: 12px; max-width: 54ch; line-height: 1.55; }
+.pilot-progress { margin-top: 24px; color: var(--muted); }
+.pilot-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+.pilot-shortlist .pick-grid { margin-top: 14px; }
+.pilot-shortlist .pick-grid li { min-height: 74px; padding: 0; }
+.pilot-pick { display: grid; width: 100%; min-height: 74px; gap: 5px; border: 0; background: transparent; color: inherit; text-align: start; padding: 12px; }
+.pilot-pick:hover { background: #e7ae6811; }
+.pilot button:disabled { cursor: wait; }
 .footer { display: flex; justify-content: space-between; gap: 14px; padding: 20px 0 28px; margin-top: 48px; border-top: 1px solid var(--line); font-size: .9rem; color: var(--muted); }
 .footer a { color: inherit; }
 @media (max-width: 760px) {

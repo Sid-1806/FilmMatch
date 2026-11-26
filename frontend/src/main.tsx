@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { api } from './api'
 import ModelLab from './ModelLab'
+import Pilot from './Pilot'
 import './style.css'
 
 export type Movie = { id: number; title: string; year: number | null; genres: string[]; rating_count: number }
@@ -244,4 +245,4 @@ function App() {
   </div>
 }
 
-createRoot(document.getElementById('root')!).render(<App />)
+createRoot(document.getElementById('root')!).render(new URLSearchParams(window.location.search).get('pilot') === '1' ? <Pilot /> : <App />)
