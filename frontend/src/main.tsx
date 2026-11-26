@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { api } from './api'
+import ModelLab from './ModelLab'
 import './style.css'
 
-type Movie = { id: number; title: string; year: number | null; genres: string[]; rating_count: number }
-type Pick = { movie: Movie; because: string | null; signal: 'ratings' | 'content' | 'popular' }
+export type Movie = { id: number; title: string; year: number | null; genres: string[]; rating_count: number }
+export type Pick = { movie: Movie; because: string | null; signal: 'ratings' | 'content' | 'popular' | 'neural' }
 type PromptPolicy = 'popular' | 'adaptive'
 type Profile = { ratings: Record<number, { movie: Movie; stars: number }>; answered: number[]; policy: PromptPolicy }
 type Metrics = {
@@ -28,12 +30,6 @@ function initialProfile(): Profile {
     const previous = JSON.parse(localStorage.getItem('filmmatch.profile.v1') ?? 'null') as Profile | null
     return previous?.ratings ? { ...empty, ratings: previous.ratings } : empty
   } catch { return empty }
-}
-
-async function api<T>(path: string, options?: RequestInit): Promise<T> {
-  const result = await fetch(`/api${path}`, options)
-  if (!result.ok) throw new Error(result.status === 404 ? 'This report is pending publication.' : 'Could not load this request. Try again.')
-  return result.json() as Promise<T>
 }
 
 function Stars({ movie, value, onRate }: { movie: Movie; value?: number; onRate: (value: number) => void }) {
@@ -103,7 +99,7 @@ function ComparisonCard({ title, results }: { title: string; results: Comparison
 }
 
 function App() {
-  const [tab, setTab] = useState<'discover' | 'benchmark'>('discover')
+  const [tab, setTab] = useState<'discover' | 'benchmark' | 'lab'>('discover')
   const [profile, setProfile] = useState(initialProfile)
   const [prompt, setPrompt] = useState<Movie | null>()
   const [promptError, setPromptError] = useState('')
@@ -180,11 +176,12 @@ function App() {
       <button type="button" className="brand" onClick={() => setTab('discover')}><span className="brand-mark" aria-hidden="true">▶</span> FilmMatch</button>
       <nav aria-label="Main navigation">
         <button type="button" aria-current={tab === 'discover' ? 'page' : undefined} onClick={() => setTab('discover')}>Discover</button>
+        <button type="button" aria-current={tab === 'lab' ? 'page' : undefined} onClick={() => setTab('lab')}>Model Lab</button>
         <button type="button" aria-current={tab === 'benchmark' ? 'page' : undefined} onClick={() => setTab('benchmark')}>Benchmark</button>
       </nav>
     </div></header>
     <main className="shell">
-      {tab === 'benchmark' ? <Benchmark /> : <>
+      {tab === 'benchmark' ? <Benchmark /> : tab === 'lab' ? <ModelLab ratings={Object.values(profile.ratings)} /> : <>
         <section className="hero">
           <div className="hero-copy"><h1>Find a film<br />worth <em>watching.</em></h1>
             <p className="lead">Rate a few movies you know. Get a shortlist that gets closer to your taste with every answer.</p></div>
@@ -236,7 +233,7 @@ function App() {
               {!picks.length && <p role="status">{loading ? 'Finding films…' : 'No films match these filters.'}</p>}
               <ul className="pick-grid">{picks.map(({ movie, because, signal }) => <li key={movie.id}>
                 <h3>{movie.title}</h3><MovieMeta movie={movie} />
-                <p>{!because ? 'Ranked using catalog popularity.' : signal === 'content' ? `Similar story or genres to ${because}.` : `Viewers who liked ${because} also liked this.`}</p>
+                <p>{signal === 'neural' ? 'The neural model ranked this using your ratings.' : !because ? 'Ranked using catalog popularity.' : signal === 'content' ? `Similar story or genres to ${because}.` : `Viewers who liked ${because} also liked this.`}</p>
               </li>)}</ul>
             </>}
           </div>

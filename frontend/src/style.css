@@ -83,6 +83,22 @@ h1 em { color: var(--gold); font-weight: 400; }
 .metric { padding: 20px; }
 .metric dl > div { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); padding-block: 8px; }
 .metric dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.lab-controls { margin-top: 24px; padding: 20px; }
+.lab-controls h2 { font-size: 1.8rem; }
+.lab-ratings { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.lab-ratings li { border: 1px solid var(--line); border-radius: 5px; padding: 5px 8px; }
+.lab-ratings strong { color: var(--gold); white-space: nowrap; margin-left: 4px; }
+.lab-fields { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-top: 15px; }
+.lab-fields label { display: grid; gap: 4px; color: var(--muted); font-size: .92rem; min-width: 0; }
+.lab-fields select { min-height: 40px; max-width: min(250px, 78vw); padding: 0 9px; border: 1px solid #49483e; border-radius: 5px; color: #f2ecdf; background: #171917; color-scheme: dark; }
+.lab-run { min-height: 40px; padding: 0 14px; border: 0; border-radius: 5px; color: #171813; background: var(--gold); font-weight: 650; }
+.lab-run:disabled { opacity: .5; }
+.lab-scroll { overflow-x: auto; margin-top: 18px; }
+.lab-table { width: 100%; text-align: left; border-collapse: collapse; }
+.lab-table caption { text-align: left; font-size: 1.25rem; margin-bottom: 10px; }
+.lab-table th, .lab-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); }
+.lab-table thead th { color: var(--muted); }
+.lab-results { margin-top: 35px; }
 .footer { display: flex; justify-content: space-between; gap: 14px; padding: 20px 0 28px; margin-top: 48px; border-top: 1px solid var(--line); font-size: .9rem; color: var(--muted); }
 .footer a { color: inherit; }
 @media (max-width: 760px) {
@@ -96,6 +112,7 @@ h1 em { color: var(--gold); font-weight: 400; }
   .pick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 380px) {
-  nav { gap: 14px; }
+  nav { gap: 8px; }
+  nav button { font-size: .85rem; }
   .pick-grid { grid-template-columns: 1fr; }
 }

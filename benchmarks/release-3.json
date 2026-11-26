@@ -1,0 +1,82 @@
+{
+  "dataset": "ml-32m",
+  "archive_sha256": "e4a68655d7386b8f95f2f2424b2ff975dfdd15ffd59e0d864a14dca43e99d6ee",
+  "split_sha256": "506c86943f7fbf593196bf22850563e049f0c4c1c43b87c66b1a96d489d12a2c",
+  "corpus_sha256": "6c3bd3d42046c4b87e2267f2e2599ba6f651b8ad23a8998237c3d2bb338ac559",
+  "code_sha": "2a3f246e526341523adc6260a04a109c33bb95b7",
+  "seed": 42,
+  "device": "cuda",
+  "torch_version": "2.11.0+cu126",
+  "model_sha256": "15d6ddb6f90aee30339859baacdda63e4b364ed628f587c872a787d37b10afbd",
+  "training_examples": 787170,
+  "best_epoch": 1,
+  "export_max_abs_error": 2.384185791015625e-07,
+  "selection": "itemknn",
+  "metrics": {
+    "validation": {
+      "users": 582,
+      "ndcg_at_10": {
+        "itemknn": 0.26437827292314936,
+        "neural": 0.25542813501757095
+      },
+      "paired_differences": {
+        "neural_minus_itemknn": {
+          "difference": -0.008950137905578403,
+          "ci95": [
+            -0.014917055592042427,
+            -0.003933596040200159
+          ]
+        }
+      }
+    },
+    "test": {
+      "users": 555,
+      "ndcg_at_10": {
+        "itemknn": 0.24104469950486432,
+        "neural": 0.22596114082886046
+      },
+      "paired_differences": {
+        "neural_minus_itemknn": {
+          "difference": -0.015083558676003883,
+          "ci95": [
+            -0.02166095594661213,
+            -0.009405243117724234
+          ]
+        }
+      }
+    }
+  },
+  "epochs": [
+    {
+      "epoch": 1,
+      "bce": 0.6311335085965357,
+      "validation_ndcg_at_10": 0.25542813501757095
+    },
+    {
+      "epoch": 2,
+      "bce": 0.6119159081129196,
+      "validation_ndcg_at_10": 0.25336601899772343
+    },
+    {
+      "epoch": 3,
+      "bce": 0.593884390811482,
+      "validation_ndcg_at_10": 0.2534676237745156
+    },
+    {
+      "epoch": 4,
+      "bce": 0.5811424765552385,
+      "validation_ndcg_at_10": 0.25348789542483824
+    }
+  ],
+  "config": {
+    "dimension": 32,
+    "hidden": 64,
+    "max_targets_per_user": 24,
+    "batch_size": 1024,
+    "max_epochs": 12,
+    "patience": 3,
+    "lr": 0.001,
+    "optimizer": "AdamW",
+    "loss": "BCEWithLogitsLoss"
+  }
+}

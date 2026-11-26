@@ -1,0 +1,21 @@
+{
+  "dataset": "ml-latest-small",
+  "archive_sha256": "696d65a3dfceac7c45750ad32df2c259311949efec81f0f144fdfb91ebc9e436",
+  "split_sha256": "3d9f7d1e04c3f7fc6e7c3cee258c6a86b399d71e433608c845e02065cb66323b",
+  "code_sha": "2a3f246e526341523adc6260a04a109c33bb95b7",
+  "seed": 42,
+  "device": "cpu",
+  "torch_version": "2.11.0+cu126",
+  "model_sha256": "ac54294441f5f8f68544b51f16b290600f6157fa7502148f302e9f5a3e8e8169",
+  "config": {
+    "dimension": 32,
+    "hidden": 64,
+    "max_targets_per_user": 24,
+    "batch_size": 1024,
+    "max_epochs": 12,
+    "patience": 3,
+    "lr": 0.001,
+    "optimizer": "AdamW",
+    "loss": "BCEWithLogitsLoss"
+  }
+}

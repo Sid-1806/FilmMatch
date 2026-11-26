@@ -14,6 +14,7 @@ from scipy import sparse
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from .model import Movie, Recommender, search_key
+from .neural import NeuralRanker
 
 CORPUS_URL = "https://www.cs.cmu.edu/~ark/personas/data/MovieSummaries.tar.gz"
 TEXT_WEIGHT = 0.75
@@ -64,6 +65,7 @@ class ContentIndex:
             if self.available
             else sparse.csr_matrix((len(movies), 0))
         )
+        self.has_terms = np.diff(self.vectors.indptr) > 0
         genre_names = sorted({genre for movie in movies for genre in movie.genres})
         self.genre_index = {genre: i for i, genre in enumerate(genre_names)}
         self.genres = self.genre_vectors(movies)
@@ -96,6 +98,7 @@ class ContentIndex:
             else sparse.csr_matrix((len(texts), 0))
         )
         result.vectors = sparse.vstack((self.vectors, vectors), format="csr")
+        result.has_terms = np.concatenate((self.has_terms, np.diff(vectors.indptr) > 0))
         result.genre_index = self.genre_index
         result.genres = np.vstack((self.genres, self.genre_vectors(movies)))
         return result
@@ -119,11 +122,11 @@ class ContentIndex:
         ids, weights = map(list, zip(*liked, strict=True))
         similarities = self.genres[candidates] @ self.genres[ids].T
         if use_text and self.available:
-            docs = self.vectors[candidates]
-            text_sim = (docs @ self.vectors[ids].T).toarray()
-            both_have_terms = (docs.getnnz(axis=1)[:, None] > 0) & (
-                self.vectors[ids].getnnz(axis=1) > 0
-            )
+            docs = self.vectors if positions is None else self.vectors[positions]
+            # Only the few rated documents become dense. Avoid sparse product
+            # allocation and a full catalog matrix copy on each request.
+            text_sim = docs @ self.vectors[ids].T.toarray()
+            both_have_terms = self.has_terms[candidates, None] & self.has_terms[ids]
             similarities = np.where(
                 both_have_terms,
                 (1 - TEXT_WEIGHT) * similarities + TEXT_WEIGHT * text_sim,
@@ -142,15 +145,20 @@ def hybrid_picks(
     genre=None,
     year_from=None,
     year_to=None,
+    neural: NeuralRanker | None = None,
 ) -> list[dict]:
     item, strengths = model.score(ratings)
+    learned = neural.score(ratings) if neural else None
     content, anchors = index.score(ratings)
     rated = len(model.movies)
     scores = content.copy()
     scale = sum(abs(weight) for weight in strengths.values()) or 1
+    collaborative = (
+        ITEM_WEIGHT * item / scale if learned is None else ITEM_WEIGHT * learned
+    )
     scores[:rated] = np.where(
         model.rating_counts > 0,
-        ITEM_WEIGHT * item / scale + (1 - ITEM_WEIGHT) * content[:rated],
+        collaborative + (1 - ITEM_WEIGHT) * content[:rated],
         content[:rated],
     )
     ordered = np.lexsort((index.movie_ids, -index.rating_counts, -scores))
@@ -171,9 +179,11 @@ def hybrid_picks(
         signal = "popular"
         if content[pos] > 0 and (
             not movie.rating_count
-            or (1 - ITEM_WEIGHT) * content[pos] >= ITEM_WEIGHT * item[pos] / scale
+            or (1 - ITEM_WEIGHT) * content[pos] >= collaborative[pos]
         ):
             reason, signal = index.movies[anchors[pos]].title, "content"
+        elif learned is not None and movie.rating_count:
+            signal = "neural"
         elif pos < rated:
             anchor = model.anchor(pos, item, strengths)
             if anchor:

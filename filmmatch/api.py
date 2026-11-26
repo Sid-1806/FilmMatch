@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, StringConstraints, model_validator
 from .content import ContentIndex, hybrid_picks
 from .ingest import IngestQueue
 from .model import Movie, Recommender, search_key
+from .neural import NeuralRanker
 from .policy import PROMPT_LIMIT, next_prompt
 
 
@@ -104,11 +105,15 @@ class Rating(BaseModel):
     stars: Annotated[int, Field(ge=1, le=5, strict=True)]
 
 
+ModelChoice = Literal["itemknn", "neural"]
+
+
 class RecommendationRequest(BaseModel):
     ratings: Annotated[list[Rating], Field(max_length=50)] = Field(default_factory=list)
     genre: Annotated[str, Field(min_length=1, max_length=32)] | None = None
     year_from: Annotated[int, Field(ge=1800, le=2200)] | None = None
     year_to: Annotated[int, Field(ge=1800, le=2200)] | None = None
+    model: ModelChoice | None = None
 
     @model_validator(mode="after")
     def validate_profile(self):
@@ -128,6 +133,12 @@ class PromptRequest(RecommendationRequest):
     shown: Annotated[
         list[Annotated[int, Field(gt=0)]], Field(max_length=PROMPT_LIMIT)
     ] = Field(default_factory=list)
+
+
+class CompareRequest(RecommendationRequest):
+    before_model: ModelChoice
+    after_model: ModelChoice
+    edit: Rating | None = None
 
 
 class MovieSubmission(BaseModel):
@@ -166,6 +177,26 @@ def create_app(model: Recommender | None = None) -> FastAPI:
             else {}
         )
         app.state.content = ContentIndex(loaded.movies, descriptions)
+        weights = Path(os.getenv("FILMMATCH_NEURAL", "models/neural-small.npz"))
+        neural = (
+            NeuralRanker.load(weights) if model is None and weights.is_file() else None
+        )
+        if neural and neural.movie_ids.tolist() != [
+            movie.id for movie in loaded.movies
+        ]:
+            raise ValueError(
+                "The neural artifact and the live movie catalog do not match."
+            )
+        app.state.neural = neural
+        report = Path("benchmarks/release-3.json")
+        chosen = (
+            json.loads(report.read_text(encoding="utf-8")).get("selection")
+            if report.is_file()
+            else None
+        )
+        app.state.active_model = (
+            "neural" if neural and chosen == "neural" else "itemknn"
+        )
         queue = (
             IngestQueue(catalog.connect, app.state.content)
             if catalog.database_url
@@ -233,16 +264,17 @@ def create_app(model: Recommender | None = None) -> FastAPI:
             profile.policy,
         )
 
-    @api.post("/api/recommend")
-    def recommend(profile: RecommendationRequest):
-        ratings = {rating.movie_id: rating.stars for rating in profile.ratings}
-        content = snapshot()
+    def rank(profile, ratings, content, choice):
         if ratings.keys() - content.index.keys():
             raise HTTPException(
                 status_code=422, detail="A rated movie is missing from the catalog."
             )
         if profile.genre and profile.genre not in api.state.genres:
             raise HTTPException(status_code=422, detail="Unknown genre.")
+        if choice == "neural" and api.state.neural is None:
+            raise HTTPException(
+                status_code=409, detail="The neural model is unavailable."
+            )
         return hybrid_picks(
             api.state.model,
             content,
@@ -250,7 +282,42 @@ def create_app(model: Recommender | None = None) -> FastAPI:
             genre=profile.genre,
             year_from=profile.year_from,
             year_to=profile.year_to,
+            neural=api.state.neural if choice == "neural" else None,
         )
+
+    @api.get("/api/models")
+    def models():
+        return {
+            "active": api.state.active_model,
+            "available": ["itemknn", "neural"] if api.state.neural else ["itemknn"],
+        }
+
+    @api.post("/api/recommend")
+    def recommend(profile: RecommendationRequest):
+        ratings = {rating.movie_id: rating.stars for rating in profile.ratings}
+        return rank(
+            profile, ratings, snapshot(), profile.model or api.state.active_model
+        )
+
+    @api.post("/api/compare")
+    def compare(profile: CompareRequest):
+        ratings = {rating.movie_id: rating.stars for rating in profile.ratings}
+        edited = ratings.copy()
+        if profile.edit:
+            if (
+                profile.edit.movie_id not in ratings
+                or profile.before_model != profile.after_model
+            ):
+                raise HTTPException(
+                    status_code=422,
+                    detail="Edit an existing rating with the same model on both sides.",
+                )
+            edited[profile.edit.movie_id] = profile.edit.stars
+        content = snapshot()
+        return {
+            "before": rank(profile, ratings, content, profile.before_model),
+            "after": rank(profile, edited, content, profile.after_model),
+        }
 
     @api.post("/api/admin/movies", status_code=202)
     def submit_movie(
@@ -291,6 +358,15 @@ def create_app(model: Recommender | None = None) -> FastAPI:
     @api.get("/api/evidence/release-2")
     def release_two_evidence():
         path = Path("benchmarks/release-2.json")
+        if not path.is_file():
+            raise HTTPException(
+                status_code=404, detail="Published benchmark is pending."
+            )
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    @api.get("/api/evidence/release-3")
+    def release_three_evidence():
+        path = Path("benchmarks/release-3.json")
         if not path.is_file():
             raise HTTPException(
                 status_code=404, detail="Published benchmark is pending."

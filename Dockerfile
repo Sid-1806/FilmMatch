@@ -20,6 +20,7 @@ RUN python -m filmmatch.download ml-latest-small \
     && rm -rf data /tmp/movielens
 COPY --from=frontend /build/dist ./frontend/dist
 COPY benchmarks ./benchmarks
+COPY models ./models
 RUN groupadd -r filmmatch && useradd -r -g filmmatch filmmatch
 USER filmmatch
 EXPOSE 8000
