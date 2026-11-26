@@ -24,6 +24,8 @@ Compare ItemKNN and the pooled PyTorch model with the same profile, or hold one 
 
 On the frozen warm-item comparison with shared content scores and fixed prompts, ItemKNN scored **0.2644** and the neural model scored **0.2554** on validation NDCG@10. On **555 eligible test viewers**, ItemKNN scored **0.2410** and the neural model scored **0.2260**. The neural-minus-ItemKNN difference was **−0.0151**, with a paired 95% bootstrap interval of **[−0.0217, −0.0094]**. ItemKNN remains the default based on validation. Neural training loss continued to fall after validation performance peaked, so the export uses the first epoch. [Committed run](benchmarks/release-3.json)
 
+Profiling identified the sparse text product and full catalog copies on the recommendation path. Keeping the catalog sparse and densifying only the handful of profile vectors reduced local API p95 from **31.65 ms** to **27.00 ms** and p50 from **19.82 ms** to **15.03 ms**. Both runs delivered all **300 requests** at an offered **20 requests per second** with identical response hashes. These are laptop Docker measurements. [Performance run](benchmarks/release-3-performance.json)
+
 ## Run locally
 
 Start the Docker engine and run the Compose stack.
@@ -67,6 +69,8 @@ For release 3, use the neural run’s source revision and install `requirements-
 ```sh
 python -m filmmatch.train_neural --archive data/ml-32m.zip --split artifacts/split-32m.json --model artifacts/model-32m --weights artifacts/neural-32m.npz --out artifacts/release-3.json --device cuda
 ```
+
+For the API comparison, start each recorded Compose revision in turn and run `python -m filmmatch.performance --sha <served-sha> --out artifacts/performance.json --profile artifacts/profile.txt`. The harness sends the same warmed request schedule to each revision and hashes the ordered responses.
 
 Select users with a seeded hash before splitting them into disjoint fit, validation, and test cohorts. Use global chronological cutoffs. Each evaluated profile receives the same popular prompts. A prior rating answers a prompt and an absent rating is a simulated skip. Relevant items have a later rating of at least four stars, were available in the fit catalog, and lack a prior rating from that user. The report includes eligible user counts and a paired bootstrap interval for the difference in NDCG@10. The small archive exercises the pipeline locally. [Committed benchmark records](benchmarks/README.md)
 

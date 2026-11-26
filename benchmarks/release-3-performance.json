@@ -1,0 +1,77 @@
+{
+  "environment": "Windows laptop with Linux Docker Desktop, 512 MiB web memory cap",
+  "before": {
+    "code_sha": "2d0b4a2",
+    "config": {
+      "warmups": 20,
+      "workers": 4,
+      "model": "itemknn"
+    },
+    "offered_requests": 300,
+    "target_rps": 20,
+    "successful_requests": 300,
+    "errors": 0,
+    "throughput_rps": 20.031352538824034,
+    "p50_ms": 19.81964999868069,
+    "p95_ms": 31.646604996785754,
+    "response_sha256": "046d8f5b468588633d556e120dcc1afc54118bd4f7aa4fbd1f394acf14b38f89"
+  },
+  "after": {
+    "code_sha": "0d48f3a",
+    "config": {
+      "warmups": 20,
+      "workers": 4,
+      "model": "itemknn"
+    },
+    "offered_requests": 300,
+    "target_rps": 20,
+    "successful_requests": 300,
+    "errors": 0,
+    "throughput_rps": 20.046932541994682,
+    "p50_ms": 15.02615000208607,
+    "p95_ms": 27.002530005120207,
+    "response_sha256": "046d8f5b468588633d556e120dcc1afc54118bd4f7aa4fbd1f394acf14b38f89"
+  },
+  "identical_ordered_responses": true,
+  "profile_calls": 120,
+  "profile_before": [
+    "         108630 function calls (108018 primitive calls) in 2.086 seconds",
+    "",
+    "   Ordered by: cumulative time",
+    "   List reduced from 123 to 24 due to restriction <24>",
+    "",
+    "   ncalls  tottime  percall  cumtime  percall filename:lineno(function)",
+    "      120    0.223    0.002    2.086    0.017 content.py:137(hybrid_picks)",
+    "      120    0.083    0.001    1.849    0.015 content.py:103(score)",
+    "      120    0.000    0.000    1.376    0.011 _base.py:691(__matmul__)",
+    "      120    0.001    0.000    1.374    0.011 _base.py:568(_matmul_dispatch)",
+    "      120    0.003    0.000    1.372    0.011 _compressed.py:509(_matmul_sparse)",
+    "      120    0.738    0.006    0.738    0.006 {built-in method scipy.sparse._sparsetools.csr_matmat}",
+    "      120    0.590    0.005    0.590    0.005 {built-in method scipy.sparse._sparsetools.csr_matmat_maxnnz}",
+    "      360    0.001    0.000    0.321    0.001 _index.py:51(__getitem__)",
+    "      120    0.000    0.000    0.253    0.002 _data.py:94(copy)",
+    "      480    0.241    0.001    0.241    0.001 {method 'copy' of 'numpy.ndarray' objects}",
+    "      120    0.001    0.000    0.131    0.001 _compressed.py:1278(_with_data)",
+    "  840/720    0.007    0.000    0.063    0.000 _compressed.py:27(__init__)"
+  ],
+  "profile_after": [
+    "         39736 function calls (39484 primitive calls) in 0.803 seconds",
+    "",
+    "   Ordered by: cumulative time",
+    "   List reduced from 107 to 24 due to restriction <24>",
+    "",
+    "   ncalls  tottime  percall  cumtime  percall filename:lineno(function)",
+    "      120    0.147    0.001    0.803    0.007 content.py:140(hybrid_picks)",
+    "      120    0.073    0.001    0.644    0.005 content.py:106(score)",
+    "      120    0.000    0.000    0.479    0.004 _base.py:691(__matmul__)",
+    "      120    0.000    0.000    0.477    0.004 _base.py:568(_matmul_dispatch)",
+    "      120    0.001    0.000    0.477    0.004 _compressed.py:495(_matmul_multivector)",
+    "      120    0.457    0.004    0.457    0.004 {built-in method scipy.sparse._sparsetools.csr_matvecs}",
+    "      120    0.001    0.000    0.034    0.000 _index.py:51(__getitem__)",
+    "      240    0.000    0.000    0.031    0.000 fromnumeric.py:53(_wrapfunc)",
+    "      120    0.000    0.000    0.030    0.000 fromnumeric.py:1140(argmax)",
+    "      120    0.029    0.000    0.029    0.000 {method 'argmax' of 'numpy.ndarray' objects}",
+    "      120    0.000    0.000    0.021    0.000 _csr.py:213(_get_arrayXslice)",
+    "      120    0.004    0.000    0.020    0.000 _compressed.py:690(_major_index_fancy)"
+  ]
+}
