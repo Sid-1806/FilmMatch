@@ -1,3 +1,4 @@
+import gzip
 import json
 import unicodedata
 from dataclasses import asdict, dataclass
@@ -15,6 +16,15 @@ class Movie:
     year: int | None
     genres: tuple[str, ...]
     rating_count: int = 0
+
+
+def load_model_json(path: Path) -> dict | list:
+    if path.is_file():
+        return json.loads(path.read_text(encoding="utf-8"))
+    with gzip.open(
+        path.with_suffix(path.suffix + ".gz"), "rt", encoding="utf-8"
+    ) as stream:
+        return json.load(stream)
 
 
 def search_key(value: str) -> str:
@@ -74,7 +84,7 @@ class Recommender:
 
     @classmethod
     def load(cls, directory: Path) -> "Recommender":
-        records = json.loads((directory / "movies.json").read_text(encoding="utf-8"))
+        records = load_model_json(directory / "movies.json")
         movies = [Movie(**{**row, "genres": tuple(row["genres"])}) for row in records]
         return cls(movies, sparse.load_npz(directory / "neighbors.npz").tocsr())
 

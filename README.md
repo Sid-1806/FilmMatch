@@ -34,7 +34,7 @@ Start the Docker engine and run the Compose stack.
 docker compose up --build --wait
 ```
 
-Open [FilmMatch on localhost](http://127.0.0.1:8088). The `web` container builds React, downloads MovieLens Latest Small, trains the development model, and seeds the Postgres search catalog on startup. The API is bound to loopback on the host. Set `FILMMATCH_PORT` to use another host port. Postgres is reachable from the Compose network.
+Open [FilmMatch on localhost](http://127.0.0.1:8088). The `web` container builds React, loads the versioned demo catalog, and seeds Postgres on startup. The Docker build uses the committed serving artifacts. The API is bound to loopback on the host. Set `FILMMATCH_PORT` to use another host port. Postgres is reachable from the Compose network.
 
 For local development with Python 3.12 and Node 24 run these commands from the repository root.
 
@@ -50,6 +50,8 @@ python -m uvicorn filmmatch.api:app --port 8088
 ```
 
 `DATABASE_URL` selects Postgres when set. The Python-only command uses the model catalog in memory for local development. Set `FILMMATCH_MODEL` to point the API at another trained artifact directory.
+
+To regenerate the packaged catalog, train MovieLens Latest Small into `artifacts/catalog-deploy`, run `python -m filmmatch.content --model artifacts/catalog-deploy`, then run `python -m filmmatch.package_catalog`. The packaged manifest records the training config and content hashes. [Catalog sources and terms](models/README.md)
 
 ## Reproduce the benchmark
 

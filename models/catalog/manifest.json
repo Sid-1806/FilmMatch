@@ -1,0 +1,29 @@
+{
+  "training": {
+    "archive_sha256": "696d65a3dfceac7c45750ad32df2c259311949efec81f0f144fdfb91ebc9e436",
+    "split_sha256": "3d9f7d1e04c3f7fc6e7c3cee258c6a86b399d71e433608c845e02065cb66323b",
+    "seed": 42,
+    "sample_limit": 50000,
+    "cutoffs": [
+      1458635171,
+      1498029450
+    ],
+    "config": {
+      "neighbors": 100,
+      "shrinkage": 10.0,
+      "prompts": 5,
+      "k": 10,
+      "relevant_stars": 4,
+      "bootstrap_samples": 2000,
+      "numpy": "1.26.4",
+      "scipy": "1.13.1"
+    },
+    "code_sha": "ea548bf09eba9e6f6cf51c7414123e7d9f8872b8"
+  },
+  "corpus_sha256": "6c3bd3d42046c4b87e2267f2e2599ba6f651b8ad23a8998237c3d2bb338ac559",
+  "sha256": {
+    "movies.json.gz": "affde99212dc1bc3301b4c361a83b175a44596aa087298424e198f0da42a6766",
+    "descriptions.json.gz": "5bbe0cf7cceb8764700ec438ec6df90e4d141735877048c695030f17f3485cbb",
+    "neighbors.npz": "532968a5858d898c1b347114ff9698f438673a8c9b5378e099c51444bd283f55"
+  }
+}

@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from .content import ContentIndex, hybrid_picks
 from .ingest import IngestQueue
-from .model import Movie, Recommender, search_key
+from .model import Movie, Recommender, load_model_json, search_key
 from .neural import NeuralRanker
 from .policy import PROMPT_LIMIT, next_prompt
 
@@ -168,14 +168,11 @@ def create_app(model: Recommender | None = None) -> FastAPI:
             {genre for movie in loaded.movies for genre in movie.genres}
         )
         path = directory / "descriptions.json"
-        descriptions = (
-            {
-                int(key): value
-                for key, value in json.loads(path.read_text(encoding="utf-8")).items()
+        descriptions = {}
+        if model is None and (path.is_file() or path.with_suffix(".json.gz").is_file()):
+            descriptions = {
+                int(key): value for key, value in load_model_json(path).items()
             }
-            if model is None and path.exists()
-            else {}
-        )
         app.state.content = ContentIndex(loaded.movies, descriptions)
         weights = Path(os.getenv("FILMMATCH_NEURAL", "models/neural-small.npz"))
         neural = (
