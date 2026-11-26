@@ -99,20 +99,33 @@ h1 em { color: var(--gold); font-weight: 400; }
 .lab-table th, .lab-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); }
 .lab-table thead th { color: var(--muted); }
 .lab-results { margin-top: 35px; }
-.pilot { max-width: 760px; padding-block: 54px; }
-.pilot h1 { font-size: clamp(3rem, 10vw, 6.7rem); }
-.pilot-home { text-decoration: none; }
-.pilot-panel, .pilot-shortlist { margin-top: 23px; }
-.pilot-panel { padding: 22px; }
-.pilot-panel h2, .pilot-shortlist h2 { font: 400 2rem Georgia, serif; }
-.pilot-panel p { color: var(--muted); margin-block: 12px; max-width: 54ch; line-height: 1.55; }
-.pilot-progress { margin-top: 24px; color: var(--muted); }
-.pilot-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
-.pilot-shortlist .pick-grid { margin-top: 14px; }
-.pilot-shortlist .pick-grid li { min-height: 74px; padding: 0; }
-.pilot-pick { display: grid; width: 100%; min-height: 74px; gap: 5px; border: 0; background: transparent; color: inherit; text-align: start; padding: 12px; }
-.pilot-pick:hover { background: #e7ae6811; }
-.pilot button:disabled { cursor: wait; }
+.mood { padding-top: clamp(34px, 7vw, 72px); }
+.mood-entry { margin-top: 9px; min-height: 44px; }
+.mood-intro { margin-bottom: 28px; }
+.mood h1 { font-size: clamp(3rem, 8vw, 5.7rem); }
+.mood h2 { font: 400 clamp(1.65rem, 4vw, 2.5rem)/1.1 Georgia, serif; }
+.mood h2:focus { outline: none; }
+.mood-card { max-width: 720px; padding: clamp(18px, 5vw, 32px); }
+.mood-progress { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; color: var(--muted); font-size: .9rem; }
+.mood-progress progress { width: min(145px, 43%); height: 8px; border: 0; border-radius: 8px; overflow: hidden; background: var(--line); color: var(--gold); }
+.mood-progress progress::-webkit-progress-bar { background: var(--line); }
+.mood-progress progress::-webkit-progress-value { background: var(--gold); }
+.mood-progress progress::-moz-progress-bar { background: var(--gold); }
+.mood-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 18px; }
+.mood-option { min-height: 49px; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; padding: 10px 12px; border-radius: 7px; border: 1px solid #49483e; background: #171917; color: inherit; }
+.mood-option span { color: var(--gold); font-size: 1.3rem; }
+.mood-option:hover, .mood-option[aria-pressed="true"] { border-color: var(--gold); background: #e7ae6812; }
+.mood button:disabled { opacity: .5; cursor: default; }
+.mood-actions { min-height: 44px; margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mood [role="alert"] { color: #f4b7a2; }
+.mood-results > p { margin-top: 7px; }
+.mood-review { margin-block: 16px; padding: 0 14px; max-width: 720px; }
+.mood-review summary { cursor: pointer; min-height: 44px; padding-block: 12px; color: var(--gold); }
+.mood-review ul { margin: 0; padding: 0; list-style: none; }
+.mood-review li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 3px 8px; padding-block: 4px; border-top: 1px solid var(--line); }
+.mood-review .text-button { white-space: normal; text-align: start; }
+.mood-edit-label { padding-left: 8px; text-decoration: underline; }
+.mood-restart { margin-top: 12px; min-height: 44px; }
 .footer { display: flex; justify-content: space-between; gap: 14px; padding: 20px 0 28px; margin-top: 48px; border-top: 1px solid var(--line); font-size: .9rem; color: var(--muted); }
 .footer a { color: inherit; }
 @media (max-width: 760px) {
@@ -129,4 +142,9 @@ h1 em { color: var(--gold); font-weight: 400; }
   nav { gap: 8px; }
   nav button { font-size: .85rem; }
   .pick-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .topbar { flex-wrap: wrap; align-content: center; padding-top: 12px; }
+  nav { width: 100%; height: 46px; justify-content: space-between; gap: 4px; }
+  .mood-options { grid-template-columns: 1fr; }
 }

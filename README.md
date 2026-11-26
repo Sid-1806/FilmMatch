@@ -2,6 +2,8 @@
 
 FilmMatch helps a new viewer find a movie from a handful of ratings. The project compares the effect of asking better questions under a fixed five-prompt budget. The public benchmark is generated from committed run records.
 
+For a pick based on what sounds good right now, open the [Mood Quiz](https://filmmatch.onrender.com/?mood=1).
+
 ## Release 1 · fixed prompts
 
 The app starts with popular movies and updates the top ten after each rating. Search for a title you know, rate or skip a suggested title, and filter the shortlist by genre and decade. An ItemKNN explanation names a rated movie when its similarity contributed positively. Ratings are stored in the browser and sent with recommendation requests.
@@ -26,15 +28,17 @@ On the frozen warm-item comparison with shared content scores and fixed prompts,
 
 Profiling identified the sparse text product and full catalog copies on the recommendation path. Keeping the catalog sparse and densifying only the handful of profile vectors reduced local API p95 from **31.65 ms** to **27.00 ms** and p50 from **19.82 ms** to **15.03 ms**. Both runs delivered all **300 requests** at an offered **20 requests per second** with identical response hashes. These are laptop Docker measurements. [Performance run](benchmarks/release-3-performance.json)
 
-## Release 4 · WhatsApp pilot
+## Release 4 · Mood Quiz
 
-The pilot link is `/?pilot=1`. Participants opt in and see both prompt styles in counterbalanced order. A random choice starts each pair of enrollments, and the next enrollment gets the opposite order. Each round begins with an empty taste profile and uses the same ItemKNN and content scorer. Each rating or skip spends one of five prompts. Participants choose one movie from each shortlist or indicate that none fit, then state which round worked better.
+Answer 12 multiple-choice questions about the feeling, intensity, story, and filters you want tonight. Every question offers “No preference.” The quiz returns up to ten films and lets you edit a single answer to see an updated shortlist. The quiz works without an account or ratings and doesn’t persist its answers.
 
-Postgres stores anonymous trial progress. The browser resumes its current step after a reload and repeated submissions count once. `/api/pilot/summary` returns aggregate starts, paired completions, preferences, picks, skips, and median time among successful rounds. Times include the full interval from the round start to shortlist submission. The pilot is a small convenience sample. The comparison can reveal usability issues and differences in this group. Pilot outcomes and any resulting product changes go in the case study after real responses arrive.
+The ranker enforces explicit genre, release era, and animation filters. It scores the films that pass using hand-written genre weights and TF-IDF matches against plot summaries, with rating counts as a tie-breaker and an optional familiarity preference. Explanations show the actual genre tags or plot terms behind a pick. Titles without summaries can match on genres, and new catalog entries use the same scoring path. The rules approximate how a film might feel, and the held-out MovieLens ratings evaluate the taste-based recommenders. Mood fit has no user-labeled benchmark yet.
+
+`GET /api/mood/questions` returns the options. Send their IDs as an `answers` object to `POST /api/mood/recommend`.
 
 ## Case study
 
-**Which five questions should a movie recommender ask?** I held the recommender and prompt budget fixed and replayed the same held-out viewers across three prompt policies. The adaptive rule traded familiar titles for genre coverage. It increased simulated skips and lost to popular prompts, so the live flow defaults to popular prompts and keeps adaptive prompts available to try. The replay treats a missing rating as a skip. The volunteer pilot checks whether that pattern also appears when people can answer the prompts themselves. [Prompt experiment](benchmarks/release-2.json)
+**Which five questions should a movie recommender ask?** I held the recommender and prompt budget fixed and replayed the same held-out viewers across three prompt policies. The adaptive rule traded familiar titles for genre coverage. It increased simulated skips and lost to popular prompts, so the live flow defaults to popular prompts and keeps adaptive prompts available to try. The replay treats a missing rating as a skip. [Prompt experiment](benchmarks/release-2.json)
 
 **How do we serve new movies?** A Postgres job adds a title to the search catalog and transforms its description with the existing TF-IDF vocabulary. The ingest test verifies that the same key returns the same movie ID. The held-out cold-item sample was too small to establish a benefit from text. [Cold-item experiment](benchmarks/release-2.json)
 

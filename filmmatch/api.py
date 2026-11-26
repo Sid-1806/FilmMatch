@@ -15,9 +15,8 @@ from pydantic import BaseModel, Field, StringConstraints, model_validator
 from .content import ContentIndex, hybrid_picks
 from .ingest import IngestQueue
 from .model import Movie, Recommender, load_model_json, search_key
+from .mood import MoodRequest, mood_picks, quiz_questions
 from .neural import NeuralRanker
-from .pilot import Pilot
-from .pilot import router as pilot_router
 from .policy import PROMPT_LIMIT, next_prompt
 
 
@@ -176,13 +175,6 @@ def create_app(model: Recommender | None = None) -> FastAPI:
                 int(key): value for key, value in load_model_json(path).items()
             }
         app.state.content = ContentIndex(loaded.movies, descriptions)
-        app.state.pilot = (
-            Pilot(catalog.connect, loaded, app.state.content)
-            if catalog.database_url
-            else None
-        )
-        if app.state.pilot:
-            app.state.pilot.initialize()
         weights = Path(os.getenv("FILMMATCH_NEURAL", "models/neural-small.npz"))
         neural = (
             NeuralRanker.load(weights) if model is None and weights.is_file() else None
@@ -218,7 +210,6 @@ def create_app(model: Recommender | None = None) -> FastAPI:
                 queue.close()
 
     api = FastAPI(title="FilmMatch", lifespan=lifespan)
-    api.include_router(pilot_router)
 
     def snapshot() -> ContentIndex:
         return api.state.queue.snapshot if api.state.queue else api.state.content
@@ -305,6 +296,14 @@ def create_app(model: Recommender | None = None) -> FastAPI:
         return rank(
             profile, ratings, snapshot(), profile.model or api.state.active_model
         )
+
+    @api.get("/api/mood/questions")
+    def mood_questions():
+        return quiz_questions()
+
+    @api.post("/api/mood/recommend")
+    def recommend_by_mood(profile: MoodRequest):
+        return mood_picks(snapshot(), profile.answers)
 
     @api.post("/api/compare")
     def compare(profile: CompareRequest):

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { api } from './api'
 import ModelLab from './ModelLab'
-import Pilot from './Pilot'
+import MoodQuiz from './MoodQuiz'
 import './style.css'
 
 export type Movie = { id: number; title: string; year: number | null; genres: string[]; rating_count: number }
@@ -100,7 +100,9 @@ function ComparisonCard({ title, results }: { title: string; results: Comparison
 }
 
 function App() {
-  const [tab, setTab] = useState<'discover' | 'benchmark' | 'lab'>('discover')
+  const [tab, setTab] = useState<'discover' | 'mood' | 'benchmark' | 'lab'>(
+    () => new URLSearchParams(window.location.search).get('mood') === '1' ? 'mood' : 'discover',
+  )
   const [profile, setProfile] = useState(initialProfile)
   const [prompt, setPrompt] = useState<Movie | null>()
   const [promptError, setPromptError] = useState('')
@@ -115,19 +117,22 @@ function App() {
   const [searchError, setSearchError] = useState('')
   const [recommendError, setRecommendError] = useState('')
   const [loading, setLoading] = useState(true)
+  const discovering = tab === 'discover'
 
   useEffect(() => {
+    if (!discovering) return
     const controller = new AbortController()
     api<{ genres: string[] }>('/catalog', { signal: controller.signal }).then(catalog => setGenres(catalog.genres))
       .catch(reason => { if (!controller.signal.aborted) setInitialError(reason.message) })
     return () => controller.abort()
-  }, [])
+  }, [discovering])
 
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify(profile)) } catch { /* Session still works in memory. */ }
   }, [profile])
 
   useEffect(() => {
+    if (!discovering) return
     const controller = new AbortController()
     setPromptError('')
     if (profile.answered.length >= promptLimit) { setPrompt(null); return }
@@ -136,9 +141,10 @@ function App() {
       body: JSON.stringify({ policy: profile.policy, shown: profile.answered, ratings: Object.values(profile.ratings).map(({ movie, stars }) => ({ movie_id: movie.id, stars })) }) })
       .then(setPrompt).catch(reason => { if (!controller.signal.aborted) setPromptError(reason.message) })
     return () => controller.abort()
-  }, [profile])
+  }, [profile, discovering])
 
   useEffect(() => {
+    if (!discovering) return
     const controller = new AbortController()
     const query = search.trim()
     setResults([]); setSearchError('')
@@ -149,9 +155,10 @@ function App() {
         .catch(reason => { if (!controller.signal.aborted) setSearchError(reason.message) })
     }, 140)
     return () => { window.clearTimeout(timeout); controller.abort() }
-  }, [search])
+  }, [search, discovering])
 
   useEffect(() => {
+    if (!discovering) return
     const controller = new AbortController()
     setLoading(true); setRecommendError('')
     api<Pick[]>('/recommend', { method: 'POST', signal: controller.signal, headers: { 'Content-Type': 'application/json' },
@@ -160,7 +167,7 @@ function App() {
       .then(setPicks).catch(reason => { if (!controller.signal.aborted) setRecommendError(reason.message) })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
-  }, [profile.ratings, genre, decade])
+  }, [profile.ratings, genre, decade, discovering])
 
   const progress = profile.answered.length
   const ratingCount = Object.keys(profile.ratings).length
@@ -177,15 +184,20 @@ function App() {
       <button type="button" className="brand" onClick={() => setTab('discover')}><span className="brand-mark" aria-hidden="true">▶</span> FilmMatch</button>
       <nav aria-label="Main navigation">
         <button type="button" aria-current={tab === 'discover' ? 'page' : undefined} onClick={() => setTab('discover')}>Discover</button>
+        <button type="button" aria-current={tab === 'mood' ? 'page' : undefined} onClick={() => setTab('mood')}>Mood Quiz</button>
         <button type="button" aria-current={tab === 'lab' ? 'page' : undefined} onClick={() => setTab('lab')}>Model Lab</button>
         <button type="button" aria-current={tab === 'benchmark' ? 'page' : undefined} onClick={() => setTab('benchmark')}>Benchmark</button>
       </nav>
     </div></header>
     <main className="shell">
-      {tab === 'benchmark' ? <Benchmark /> : tab === 'lab' ? <ModelLab ratings={Object.values(profile.ratings)} /> : <>
+      <MoodQuiz active={tab === 'mood'} />
+      {tab === 'benchmark' && <Benchmark />}
+      {tab === 'lab' && <ModelLab ratings={Object.values(profile.ratings)} />}
+      {discovering && <>
         <section className="hero">
           <div className="hero-copy"><h1>Find a film<br />worth <em>watching.</em></h1>
-            <p className="lead">Rate a few movies you know. Get a shortlist that gets closer to your taste with every answer.</p></div>
+            <p className="lead">Rate a few movies you know. Get a shortlist that gets closer to your taste with every answer.</p>
+            <button type="button" className="text-button mood-entry" onClick={() => setTab('mood')}>Find a film for your mood <span aria-hidden="true">→</span></button></div>
           <div className="screen" aria-hidden="true"><div className="screen-letter">F<span>M</span></div></div>
         </section>
         {initialError && <p role="alert">{initialError}</p>}
@@ -245,4 +257,4 @@ function App() {
   </div>
 }
 
-createRoot(document.getElementById('root')!).render(new URLSearchParams(window.location.search).get('pilot') === '1' ? <Pilot /> : <App />)
+createRoot(document.getElementById('root')!).render(<App />)
