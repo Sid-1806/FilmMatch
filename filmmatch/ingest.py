@@ -22,7 +22,7 @@ class IngestQueue:
         self.base = index
         self.snapshot = index
         self.published = (0, None)
-        self.tmdb_movies = 0
+        self.tmdb_ids: dict[int, int] = {}
         self.stop = Event()
         self.wake = Event()
         self.thread = Thread(target=self.run, name="film-ingest", daemon=True)
@@ -139,14 +139,23 @@ class IngestQueue:
             revision = cur.fetchone()
             if revision == self.published:
                 return
-            cur.execute("""SELECT id,payload,request_key LIKE 'tmdb:%'
+            cur.execute("""SELECT id,payload,request_key
                 FROM movie_ingests WHERE status='ready' ORDER BY id""")
             rows = cur.fetchall()
-        self.snapshot = self.base.extend(
+        snapshot = self.base.extend(
             [added_movie(movie_id, data) for movie_id, data, _ in rows]
         )
-        self.tmdb_movies = sum(is_tmdb for _, _, is_tmdb in rows)
+        self.tmdb_ids = {
+            movie_id: int(key.removeprefix("tmdb:"))
+            for movie_id, _, key in rows
+            if key.startswith("tmdb:")
+        }
+        self.snapshot = snapshot
         self.published = revision
+
+    @property
+    def tmdb_movies(self) -> int:
+        return len(self.tmdb_ids)
 
     def run(self) -> None:
         while not self.stop.is_set():

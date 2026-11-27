@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import type { Movie } from './main'
+import { MovieCardTitle } from './MovieDetails'
 
 type Option = { id: string; label: string }
 type QuestionText = { label: string; options: Option[] }
@@ -18,7 +19,7 @@ function questionForAnswers(question: Question, answers: Answers) {
     : question
 }
 
-export default function MoodQuiz({ active }: { active: boolean }) {
+export default function MoodQuiz({ active, onOpenMovie }: { active: boolean; onOpenMovie: (movie: Movie) => void }) {
   const [questions, setQuestions] = useState<Question[]>()
   const [questionError, setQuestionError] = useState(false)
   const [attempt, setAttempt] = useState(0)
@@ -135,8 +136,8 @@ export default function MoodQuiz({ active }: { active: boolean }) {
           </button>
         </li>)}</ul>
       </details>
-      <ul className="pick-grid">{picks.map(({ movie, reasons }) => <li key={movie.id}>
-        <h3>{movie.title}</h3>
+      <ul className="pick-grid">{picks.map(({ movie, reasons }) => <li className="movie-card" key={movie.id}>
+        <MovieCardTitle movie={movie} onOpen={onOpenMovie} />
         <span className="movie-meta">{[movie.year, ...movie.genres.slice(0, 3)].filter(Boolean).join(' · ')}</span>
         {reasons.map(({ answer, detail }) => <p key={answer}><strong>{answer}</strong><br />{detail}</p>)}
       </li>)}</ul>

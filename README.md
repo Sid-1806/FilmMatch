@@ -46,6 +46,12 @@ On startup, a background job checks whether a refresh is due. It imports a bound
 
 Imported movies appear in search and the Mood Quiz once they’re indexed. Choose **This year or last year** in the quiz to focus on recent releases. The taste-based feed uses the content path for imported films and MovieLens rating counts remain unchanged. `GET /api/catalog` reports whether import is enabled and how many TMDB titles are indexed. Saved benchmark results use the original frozen MovieLens splits.
 
+## Movie details
+
+Open a recommendation card or use **Details** next to a search result. FilmMatch loads the plot, poster, runtime, release date, director and main cast on click. It resolves imported movies by their TMDB IDs and bundled titles by the identifiers in MovieLens. `GET /api/movies/{id}` returns the details for a FilmMatch movie ID. If TMDB is unavailable, FilmMatch can still show the catalog overview and known IMDb link. [TMDB details API](https://developer.themoviedb.org/reference/movie-details)
+
+Set `OMDB_API_KEY` on Render or in your local Compose environment to display the IMDb score. This optional lookup uses the exact IMDb ID and keeps the IMDb and TMDB scores separate. OMDb supplies the IMDb score under CC BY-NC 4.0. FilmMatch caches TMDB details within the hour and IMDb scores within the day. [OMDb API and license](https://www.omdbapi.com/) · [Free developer key](https://www.omdbapi.com/apikey.aspx?at=freeAcct)
+
 ## Case study
 
 **Which five questions should a movie recommender ask?** I held the recommender and prompt budget fixed and replayed the same held-out viewers across three prompt policies. The adaptive rule traded familiar titles for genre coverage. It increased simulated skips and lost to popular prompts, so the live flow defaults to popular prompts and keeps adaptive prompts available to try. The replay treats a missing rating as a skip. [Prompt experiment](benchmarks/release-2.json)

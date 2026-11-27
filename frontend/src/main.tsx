@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { api } from './api'
 import ModelLab from './ModelLab'
 import MoodQuiz from './MoodQuiz'
+import MovieDetails, { MovieCardTitle } from './MovieDetails'
 import './style.css'
 
 export type Movie = { id: number; title: string; year: number | null; genres: string[]; rating_count: number }
@@ -111,6 +112,7 @@ function App() {
   const [search, setSearch] = useState('')
   const [results, setResults] = useState<Movie[]>([])
   const [selected, setSelected] = useState<Movie>()
+  const [detailMovie, setDetailMovie] = useState<Movie>()
   const [genre, setGenre] = useState('')
   const [decade, setDecade] = useState('')
   const [initialError, setInitialError] = useState('')
@@ -190,7 +192,7 @@ function App() {
       </nav>
     </div></header>
     <main className="shell">
-      <MoodQuiz active={tab === 'mood'} />
+      <MoodQuiz active={tab === 'mood'} onOpenMovie={setDetailMovie} />
       {tab === 'benchmark' && <Benchmark />}
       {tab === 'lab' && <ModelLab ratings={Object.values(profile.ratings)} />}
       {discovering && <>
@@ -227,8 +229,10 @@ function App() {
             {searchError && <p className="movie-meta" role="status">{searchError}</p>}
             {results.length > 0 && <ul className="search-results">{results.map(movie => <li key={movie.id}>
               <button type="button" onClick={() => { setSelected(movie); setSearch(''); setResults([]) }}>
-                <strong>{movie.title}</strong><MovieMeta movie={movie} />
-              </button></li>)}</ul>}
+                <strong id={`search-film-${movie.id}`}>{movie.title}</strong><MovieMeta movie={movie} />
+              </button>
+              <button type="button" className="search-detail-button" aria-haspopup="dialog" aria-describedby={`search-film-${movie.id}`}
+                onClick={() => setDetailMovie(movie)}>Details</button></li>)}</ul>}
             {selected && <div className="selected"><strong>{selected.title}</strong><Stars movie={selected} value={profile.ratings[selected.id]?.stars} onRate={stars => choose(selected, stars)} /></div>}
             <div className="profile-info"><span>{ratingCount} {ratingCount === 1 ? 'rating' : 'ratings'} added</span>
               {(ratingCount > 0 || progress > 0) && <button className="text-button" type="button" onClick={reset}>Start over</button>}</div>
@@ -244,8 +248,8 @@ function App() {
           <div aria-live="polite" aria-busy={loading}>
             {recommendError ? <p role="alert">{recommendError}</p> : <>
               {!picks.length && <p role="status">{loading ? 'Finding films…' : 'No films match these filters.'}</p>}
-              <ul className="pick-grid">{picks.map(({ movie, because, signal }) => <li key={movie.id}>
-                <h3>{movie.title}</h3><MovieMeta movie={movie} />
+              <ul className="pick-grid">{picks.map(({ movie, because, signal }) => <li className="movie-card" key={movie.id}>
+                <MovieCardTitle movie={movie} onOpen={setDetailMovie} /><MovieMeta movie={movie} />
                 <p>{signal === 'neural' ? 'The neural model ranked this using your ratings.' : !because ? 'Ranked using catalog popularity.' : signal === 'content' ? `Similar story or genres to ${because}.` : `Viewers who liked ${because} also liked this.`}</p>
               </li>)}</ul>
             </>}
@@ -253,6 +257,7 @@ function App() {
         </section>
       </>}
     </main>
+    {detailMovie && <MovieDetails key={detailMovie.id} movie={detailMovie} onClose={() => setDetailMovie(undefined)} />}
     <footer className="shell footer" aria-label="Data credits">
       <div className="footer-links"><span>FilmMatch</span><a href="https://www.cs.cmu.edu/~ark/personas/">CMU plot summaries</a>
         <a href="https://grouplens.org/datasets/movielens/">MovieLens ratings</a></div>

@@ -1,11 +1,28 @@
 import argparse
 import gzip
+import io
 import json
 import shutil
+from csv import DictReader
 from pathlib import Path
 from zipfile import ZipFile
 
 from .benchmark import digest, write_json
+
+
+def package_links(archive: ZipFile, out: Path) -> None:
+    member = next(name for name in archive.namelist() if Path(name).name == "links.csv")
+    with io.TextIOWrapper(archive.open(member), encoding="utf-8") as source:
+        links = {
+            row["movieId"]: {
+                "imdb": f"tt{row['imdbId']}" if row["imdbId"] else None,
+                "tmdb": int(row["tmdbId"]) if row["tmdbId"] else None,
+            }
+            for row in DictReader(source)
+        }
+    out.write_bytes(
+        gzip.compress(json.dumps(links, separators=(",", ":")).encode(), mtime=0)
+    )
 
 
 def main() -> None:
@@ -31,12 +48,13 @@ def main() -> None:
         )
     shutil.copyfile(args.model / "neighbors.npz", args.out / "neighbors.npz")
     with ZipFile(args.archive) as archive:
+        package_links(archive, args.out / "links.json.gz")
         readme = next(
             name for name in archive.namelist() if Path(name).name == "README.txt"
         )
         license_text = archive.read(readme).replace(b"\n=======\n", b"\n\n", 1)
         (args.out / "MOVIELENS-LICENSE.txt").write_bytes(license_text)
-    names = ("movies.json.gz", "descriptions.json.gz", "neighbors.npz")
+    names = ("movies.json.gz", "descriptions.json.gz", "neighbors.npz", "links.json.gz")
     write_json(
         args.out / "manifest.json",
         {

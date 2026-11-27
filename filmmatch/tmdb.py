@@ -32,13 +32,13 @@ class TMDB:
         self.api_key = api_key
         self.tls = ssl.create_default_context(cafile=certifi.where())
 
-    def get(self, path: str, **params) -> dict:
+    def get(self, path: str, *, timeout: float = 10, **params) -> dict:
         query = urlencode({"api_key": self.api_key, "language": "en-US", **params})
         request = Request(
             f"{API_ROOT}/{path}?{query}", headers={"Accept": "application/json"}
         )
         try:
-            with urlopen(request, timeout=10, context=self.tls) as response:
+            with urlopen(request, timeout=timeout, context=self.tls) as response:
                 data = json.load(response)
         except HTTPError as error:
             raise TMDBError(f"TMDB returned HTTP {error.code}.") from None

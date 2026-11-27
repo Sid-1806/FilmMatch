@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from .content import ContentIndex, hybrid_picks
+from .details import MovieDetails
 from .ingest import IngestQueue
 from .model import Movie, Recommender, load_model_json, search_key
 from .mood import MoodRequest, mood_picks, quiz_questions
@@ -203,8 +204,18 @@ def create_app(model: Recommender | None = None) -> FastAPI:
         )
         app.state.queue = queue
         tmdb_key = os.getenv("TMDB_API_KEY", "").strip()
-        tmdb = TMDBSync(queue, TMDB(tmdb_key)) if queue and tmdb_key else None
+        tmdb_client = TMDB(tmdb_key) if tmdb_key else None
+        tmdb = TMDBSync(queue, tmdb_client) if queue and tmdb_client else None
         app.state.tmdb_enabled = tmdb is not None
+        app.state.details = MovieDetails(
+            tmdb_client, os.getenv("OMDB_API_KEY", "").strip()
+        )
+        links = directory / "links.json"
+        app.state.links = (
+            load_model_json(links)
+            if links.is_file() or links.with_suffix(".json.gz").is_file()
+            else {}
+        )
         if queue:
             queue.initialize()
         try:
@@ -264,6 +275,18 @@ def create_app(model: Recommender | None = None) -> FastAPI:
     @api.get("/api/prompts")
     def prompts():
         return api.state.model.prompts(set())
+
+    @api.get("/api/movies/{movie_id}")
+    def movie_details(movie_id: int):
+        content = snapshot()
+        pos = content.index.get(movie_id)
+        if pos is None:
+            raise HTTPException(404, "Movie was not found.")
+        links = api.state.links.get(str(movie_id), {})
+        queue = api.state.queue
+        tmdb_id = links.get("tmdb") or (queue.tmdb_ids.get(movie_id) if queue else None)
+        details = api.state.details.get(content.texts[pos], tmdb_id, links.get("imdb"))
+        return {"movie": content.movies[pos], **details}
 
     @api.post("/api/prompt")
     def prompt(profile: PromptRequest):
