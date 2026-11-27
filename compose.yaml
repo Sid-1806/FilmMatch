@@ -18,6 +18,7 @@ services:
     environment:
       DATABASE_URL: postgresql://filmmatch:${FILMMATCH_DB_PASSWORD:-filmmatch-local}@db:5432/filmmatch
       FILMMATCH_ADMIN_TOKEN: ${FILMMATCH_ADMIN_TOKEN:-filmmatch-local-admin}
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
     ports:
       - '127.0.0.1:${FILMMATCH_PORT:-8088}:8000'
     depends_on:

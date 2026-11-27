@@ -18,6 +18,7 @@ from .model import Movie, Recommender, load_model_json, search_key
 from .mood import MoodRequest, mood_picks, quiz_questions
 from .neural import NeuralRanker
 from .policy import PROMPT_LIMIT, next_prompt
+from .tmdb import TMDB, TMDBSync
 
 
 def search_order(movie: Movie, query: str) -> tuple:
@@ -201,11 +202,18 @@ def create_app(model: Recommender | None = None) -> FastAPI:
             else None
         )
         app.state.queue = queue
+        tmdb_key = os.getenv("TMDB_API_KEY", "").strip()
+        tmdb = TMDBSync(queue, TMDB(tmdb_key)) if queue and tmdb_key else None
+        app.state.tmdb_enabled = tmdb is not None
         if queue:
             queue.initialize()
         try:
+            if tmdb:
+                tmdb.initialize()
             yield
         finally:
+            if tmdb and tmdb.thread.ident is not None:
+                tmdb.close()
             if queue:
                 queue.close()
 
@@ -234,7 +242,11 @@ def create_app(model: Recommender | None = None) -> FastAPI:
 
     @api.get("/api/catalog")
     def catalog():
-        return {"genres": api.state.genres}
+        return {
+            "genres": api.state.genres,
+            "tmdb_enabled": api.state.tmdb_enabled,
+            "tmdb_movies": api.state.queue.tmdb_movies if api.state.queue else 0,
+        }
 
     @api.get("/api/search")
     def search(

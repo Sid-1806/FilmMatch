@@ -36,6 +36,14 @@ The ranker enforces explicit genre, release era, and animation filters. It score
 
 `GET /api/mood/questions` returns the options. Send their IDs as an `answers` object to `POST /api/mood/recommend`.
 
+## New releases from TMDB
+
+Set `TMDB_API_KEY` in the FilmMatch web service's Render environment to enable the import. For local Compose, set the same variable in your shell or the ignored `.env` file. The key stays on the server and Postgres must be configured.
+
+On startup, a background job checks whether a refresh is due. It imports a bounded set of popular releases for each year since 2019 and gives the last 90 days additional coverage. It keeps released titles with usable plots and genres, maps genres to MovieLens labels, and updates records by TMDB ID. Successful refreshes are due again in seven days. Failed requests retry after 15 minutes while the app continues serving its current catalog. On Render Free, a due refresh starts once the app wakes. [TMDB movie discovery](https://developer.themoviedb.org/reference/discover-movie) · [Render free hosting](https://render.com/docs/free)
+
+Imported movies appear in search and the Mood Quiz once they’re indexed. Choose **This year or last year** in the quiz to focus on recent releases. The taste-based feed uses the content path for imported films and MovieLens rating counts remain unchanged. `GET /api/catalog` reports whether import is enabled and how many TMDB titles are indexed. Saved benchmark results use the original frozen MovieLens splits.
+
 ## Case study
 
 **Which five questions should a movie recommender ask?** I held the recommender and prompt budget fixed and replayed the same held-out viewers across three prompt policies. The adaptive rule traded familiar titles for genre coverage. It increased simulated skips and lost to popular prompts, so the live flow defaults to popular prompts and keeps adaptive prompts available to try. The replay treats a missing rating as a skip. [Prompt experiment](benchmarks/release-2.json)
@@ -111,5 +119,7 @@ For a public deployment without a payment card, create a Neon Free Postgres data
 ## Data credit
 
 FilmMatch uses MovieLens data from GroupLens Research. Use and redistribution of MovieLens data and transformations follow the respective dataset terms. This non-commercial project has no affiliation with GroupLens or the University of Minnesota. [Latest Small terms](https://files.grouplens.org/datasets/movielens/ml-latest-small-README.html) · [32M terms](https://files.grouplens.org/datasets/movielens/ml-32m-README.html)
+
+This product uses the TMDB API but is not endorsed or certified by TMDB. [The Movie Database](https://www.themoviedb.org/)
 
 F. Maxwell Harper and Joseph A. Konstan. 2015. *The MovieLens Datasets: History and Context*. ACM Transactions on Interactive Intelligent Systems. [Paper](https://doi.org/10.1145/2827872)

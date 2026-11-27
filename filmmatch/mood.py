@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Annotated
 
 import numpy as np
@@ -9,6 +10,8 @@ from .model import Movie
 
 ANY = "any"
 LIMIT = 10
+LATEST_ERA = "this-or-last-year"
+LATEST_LABEL = "This year or last year"
 
 
 @dataclass(frozen=True)
@@ -45,7 +48,7 @@ QUESTIONS = {
         {
             "lighter": Option(
                 "Lighter and in a better mood",
-                ("Comedy", "Family", "Musical"),
+                ("Comedy", "Children", "Musical"),
                 "celebration reunion laughter friendship",
                 ("Horror", "War", "Thriller"),
                 2,
@@ -75,7 +78,7 @@ QUESTIONS = {
         {
             "low": Option(
                 "Keep it light",
-                ("Comedy", "Family"),
+                ("Comedy", "Children"),
                 "holiday festival friendship",
                 ("Horror", "Thriller", "War"),
                 1.5,
@@ -207,7 +210,10 @@ QUESTIONS = {
     ),
     "era": (
         "Which release era sounds best?",
-        {key: Option(label) for key, (label, _, _) in ERAS.items()},
+        {
+            **{key: Option(label) for key, (label, _, _) in ERAS.items()},
+            LATEST_ERA: Option(LATEST_LABEL),
+        },
     ),
     "animation": (
         "How do you feel about animation tonight?",
@@ -264,9 +270,10 @@ def quiz_questions() -> list[dict]:
     ]
 
 
-def matches(movie: Movie, answers: dict[str, str]) -> bool:
+def matches(
+    movie: Movie, answers: dict[str, str], era: tuple[str, int, int] | None
+) -> bool:
     animation = answers["animation"]
-    era = ERAS.get(answers["era"])
     return (
         (answers["genre"] == ANY or answers["genre"] in movie.genres)
         and answers["avoid"] not in movie.genres
@@ -323,11 +330,17 @@ def mood_picks(index: ContentIndex, answers: dict[str, str]) -> list[dict]:
     elif discovery == "lesser-known":
         scores += 0.75 * (1 - popularity)
 
-    order = np.lexsort((index.movie_ids, -index.rating_counts, -scores))
+    era = ERAS.get(answers["era"])
+    sort_keys = [index.movie_ids, -index.rating_counts, -scores]
+    if answers["era"] == LATEST_ERA:
+        year = datetime.now(UTC).year
+        era = (LATEST_LABEL, year - 1, year)
+        sort_keys.insert(1, np.asarray([-(movie.year or 0) for movie in index.movies]))
+    order = np.lexsort(tuple(sort_keys))
     picks = []
     for pos in order:
         movie = index.movies[pos]
-        if not matches(movie, answers):
+        if not matches(movie, answers, era):
             continue
         evidence = []
         ranked_reasons = sorted(reasons, key=lambda entry: -entry[2][pos])
@@ -347,7 +360,7 @@ def mood_picks(index: ContentIndex, answers: dict[str, str]) -> list[dict]:
                 evidence.append({"answer": option.label, "detail": detail})
         if answers["genre"] != ANY:
             evidence.append({"answer": "Genre", "detail": f"Tagged {answers['genre']}"})
-        if era := ERAS.get(answers["era"]):
+        if era:
             evidence.append({"answer": era[0], "detail": f"Released in {movie.year}"})
         if answers["animation"] == "animated":
             evidence.append({"answer": "Animation only", "detail": "Tagged Animation"})

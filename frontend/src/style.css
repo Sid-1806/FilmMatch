@@ -126,7 +126,10 @@ h1 em { color: var(--gold); font-weight: 400; }
 .mood-review .text-button { white-space: normal; text-align: start; }
 .mood-edit-label { padding-left: 8px; text-decoration: underline; }
 .mood-restart { margin-top: 12px; min-height: 44px; }
-.footer { display: flex; justify-content: space-between; gap: 14px; padding: 20px 0 28px; margin-top: 48px; border-top: 1px solid var(--line); font-size: .9rem; color: var(--muted); }
+.footer { display: grid; gap: 16px; padding: 20px 0 28px; margin-top: 48px; border-top: 1px solid var(--line); font-size: .9rem; color: var(--muted); }
+.footer-links, .tmdb-credit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.footer-links { justify-content: space-between; }
+.tmdb-credit img { display: block; }
 .footer a { color: inherit; }
 @media (max-width: 760px) {
   .shell { width: calc(100% - 36px); }

@@ -2,7 +2,7 @@ import logging
 from contextlib import closing
 from threading import Event, Thread
 
-from psycopg2.extras import Json
+from psycopg2.extras import Json, execute_values
 
 from .content import ContentIndex
 from .model import Movie
@@ -21,7 +21,8 @@ class IngestQueue:
         self.connect = connect
         self.base = index
         self.snapshot = index
-        self.published: tuple[int, ...] = ()
+        self.published = (0, None)
+        self.tmdb_movies = 0
         self.stop = Event()
         self.wake = Event()
         self.thread = Thread(target=self.run, name="film-ingest", daemon=True)
@@ -78,6 +79,25 @@ class IngestQueue:
                 )
             )
 
+    def publish_tmdb(self, movies: dict[int, dict]) -> None:
+        # Colons reserve these source IDs from user-supplied idempotency keys.
+        with closing(self.connect()) as conn, conn, conn.cursor() as cur:
+            execute_values(
+                cur,
+                """INSERT INTO movie_ingests (request_key, payload, status, ready_at)
+                VALUES %s
+                ON CONFLICT (request_key) DO UPDATE
+                SET payload=EXCLUDED.payload, ready_at=EXCLUDED.ready_at
+                WHERE movie_ingests.payload IS DISTINCT FROM EXCLUDED.payload""",
+                [
+                    (f"tmdb:{movie_id}", Json(movie))
+                    for movie_id, movie in movies.items()
+                ],
+                template="(%s, %s, 'ready', now())",
+            )
+            cur.execute("UPDATE tmdb_sync SET due_at=now()+interval '7 days'")
+        self.wake.set()
+
     def process_one(self) -> bool:
         with closing(self.connect()) as conn, conn, conn.cursor() as cur:
             cur.execute("""SELECT id,payload,attempts FROM movie_ingests
@@ -114,16 +134,19 @@ class IngestQueue:
 
     def refresh(self) -> None:
         with closing(self.connect()) as conn, conn.cursor() as cur:
-            cur.execute(
-                "SELECT id,payload FROM movie_ingests WHERE status='ready' ORDER BY id"
-            )
+            cur.execute("""SELECT count(*), max(ready_at) FILTER (WHERE request_key LIKE 'tmdb:%')
+                FROM movie_ingests WHERE status='ready'""")
+            revision = cur.fetchone()
+            if revision == self.published:
+                return
+            cur.execute("""SELECT id,payload,request_key LIKE 'tmdb:%'
+                FROM movie_ingests WHERE status='ready' ORDER BY id""")
             rows = cur.fetchall()
-        ids = tuple(movie_id for movie_id, _ in rows)
-        if ids != self.published:
-            self.snapshot = self.base.extend(
-                [added_movie(movie_id, data) for movie_id, data in rows]
-            )
-            self.published = ids
+        self.snapshot = self.base.extend(
+            [added_movie(movie_id, data) for movie_id, data, _ in rows]
+        )
+        self.tmdb_movies = sum(is_tmdb for _, _, is_tmdb in rows)
+        self.published = revision
 
     def run(self) -> None:
         while not self.stop.is_set():

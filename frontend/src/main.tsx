@@ -253,7 +253,13 @@ function App() {
         </section>
       </>}
     </main>
-    <footer className="shell footer"><span>FilmMatch</span><a href="https://www.cs.cmu.edu/~ark/personas/">CMU plot summaries</a><a href="https://grouplens.org/datasets/movielens/">MovieLens ratings</a></footer>
+    <footer className="shell footer" aria-label="Data credits">
+      <div className="footer-links"><span>FilmMatch</span><a href="https://www.cs.cmu.edu/~ark/personas/">CMU plot summaries</a>
+        <a href="https://grouplens.org/datasets/movielens/">MovieLens ratings</a></div>
+      <div className="tmdb-credit"><a href="https://www.themoviedb.org/" aria-label="The Movie Database">
+        <img src={new URL('./tmdb-logo.svg', import.meta.url).href} alt="TMDB" width="62" />
+      </a><p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p></div>
+    </footer>
   </div>
 }
 
