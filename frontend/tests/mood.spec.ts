@@ -26,3 +26,24 @@ test('finishes the mood quiz, fixes an incompatible answer, and starts fresh', a
   await expect(page.getByText('Question 1 of 12')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Lighter and in a better mood' })).toHaveAttribute('aria-pressed', 'false')
 })
+
+test('offers a superhero follow-up and clears it when the story answer changes', async ({ page }) => {
+  await page.goto('/?mood=1')
+  for (const choice of ['Buzzing with excitement', 'No preference', 'Action', 'No preference', 'A superhero story']) {
+    await page.getByRole('button', { name: choice, exact: true }).click()
+  }
+  await expect(page.getByRole('heading', { name: 'Which superhero sounds right tonight?' })).toBeVisible()
+  await page.getByRole('button', { name: 'Spider-Man', exact: true }).click()
+  for (const choice of ['No preference', 'No preference', 'No preference', '2000s', 'Leave out animation', 'No preference']) {
+    await page.getByRole('button', { name: choice, exact: true }).click()
+  }
+  await expect(page.getByRole('heading', { name: 'Spider-Man', exact: true })).toBeVisible()
+  await expect(page.getByText('Title mentions Spider-Man').first()).toBeVisible()
+  await page.getByText('Edit answers', { exact: true }).click()
+  await page.getByRole('button', { name: /A superhero story\s*Edit/ }).click()
+  await page.getByRole('button', { name: 'A mission that could go wrong' }).click()
+  await expect(page.getByRole('heading', { name: 'Picks for tonight' })).toBeFocused()
+  await page.getByText('Edit answers', { exact: true }).click()
+  await expect(page.getByRole('listitem').filter({ hasText: 'Who would you like to spend the story with?' })
+    .getByRole('button', { name: /No preference\s*Edit/ })).toBeVisible()
+})

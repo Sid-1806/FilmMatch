@@ -7,9 +7,12 @@ from pydantic import BaseModel, Field, model_validator
 
 from .content import ContentIndex
 from .model import Movie
+from .superheroes import HEROES, superhero_evidence
 
 ANY = "any"
 LIMIT = 10
+SUPERHERO = "superhero"
+SUPERHERO_LABEL = "A superhero story"
 LATEST_ERA = "this-or-last-year"
 LATEST_LABEL = "This year or last year"
 
@@ -137,6 +140,7 @@ QUESTIONS = {
                 ("Action", "Adventure"),
                 "mission heist rescue escape",
             ),
+            SUPERHERO: Option(SUPERHERO_LABEL),
             "comic": Option(
                 "An escalating comedy of errors",
                 ("Comedy",),
@@ -246,16 +250,23 @@ class MoodRequest(BaseModel):
     @model_validator(mode="after")
     def validate_answers(self):
         if self.answers.keys() != QUESTIONS.keys() or any(
-            answer != ANY and answer not in QUESTIONS[key][1]
+            answer != ANY and answer not in answer_options(key, self.answers)
             for key, answer in self.answers.items()
         ):
             raise ValueError("Choose one available option for each question.")
         return self
 
 
+def answer_options(key: str, answers: dict[str, str]) -> dict:
+    if key == "characters" and answers["hook"] == SUPERHERO:
+        return HEROES
+    return QUESTIONS[key][1]
+
+
 def quiz_questions() -> list[dict]:
-    return [
-        {
+    questions = []
+    for key, (question, options) in QUESTIONS.items():
+        entry = {
             "id": key,
             "label": question,
             "options": [
@@ -266,8 +277,20 @@ def quiz_questions() -> list[dict]:
                 {"id": ANY, "label": "No preference"},
             ],
         }
-        for key, (question, options) in QUESTIONS.items()
-    ]
+        if key == "characters":
+            entry["variant"] = {
+                "when": {"question": "hook", "option": SUPERHERO},
+                "label": "Which superhero sounds right tonight?",
+                "options": [
+                    *(
+                        {"id": hero, "label": name}
+                        for hero, (name, _) in HEROES.items()
+                    ),
+                    {"id": ANY, "label": "Any superhero"},
+                ],
+            }
+        questions.append(entry)
+    return questions
 
 
 def matches(
@@ -294,9 +317,10 @@ def genre_hits(index: ContentIndex, genres: tuple[str, ...]) -> np.ndarray:
 
 def mood_picks(index: ContentIndex, answers: dict[str, str]) -> list[dict]:
     options = [
-        QUESTIONS[key][1][answers[key]]
+        option
         for key in SIGNAL_QUESTIONS
-        if answers[key] != ANY
+        if (option := QUESTIONS[key][1].get(answers[key]))
+        and (option.genres or option.words or option.discourage)
     ]
     scores = np.zeros(len(index.movies))
     reasons = []
@@ -337,12 +361,32 @@ def mood_picks(index: ContentIndex, answers: dict[str, str]) -> list[dict]:
         era = (LATEST_LABEL, year - 1, year)
         sort_keys.insert(1, np.asarray([-(movie.year or 0) for movie in index.movies]))
     order = np.lexsort(tuple(sort_keys))
+    candidates = (pos for pos in order if matches(index.movies[pos], answers, era))
+    hero = answers["characters"]
+    hero_matches = {}
+    if answers["hook"] == SUPERHERO:
+        hero_matches = {
+            pos: evidence
+            for pos in candidates
+            if (
+                evidence := superhero_evidence(
+                    index.movies[pos].title, index.texts[pos], hero
+                )
+            )
+        }
+        candidates = iter(
+            hero_matches
+            if hero == ANY
+            else sorted(hero_matches, key=lambda pos: not hero_matches[pos][1])
+        )
+
     picks = []
-    for pos in order:
+    for pos in candidates:
         movie = index.movies[pos]
-        if not matches(movie, answers, era):
-            continue
         evidence = []
+        if pos in hero_matches:
+            label = SUPERHERO_LABEL if hero == ANY else HEROES[hero][0]
+            evidence.append({"answer": label, "detail": hero_matches[pos][0]})
         ranked_reasons = sorted(reasons, key=lambda entry: -entry[2][pos])
         for option, query, contribution in ranked_reasons:
             if contribution[pos] <= 0:

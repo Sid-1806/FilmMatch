@@ -35,6 +35,31 @@ def test_mood_changes_order_and_explains_genre_and_plot_matches():
     assert "teacher" in mentor[0]["reasons"][0]["detail"]
 
 
+def test_superhero_answers_filter_by_title_and_plot_evidence():
+    spider_man = Movie(1, "Spider-Man: Brand New Day", 2026, ("Action",))
+    batman = Movie(2, "Batman", 2025, ("Action",), 90)
+    heist = Movie(3, "Crime on the Run", 2026, ("Action",), 120)
+    cameo = Movie(4, "The Crossover", 2026, ("Action",), 300)
+    false_match = Movie(5, "Spidermania", 2026, ("Action",), 999)
+    index = ContentIndex(
+        [spider_man, batman, heist, cameo, false_match],
+        {
+            3: "A heist, a chase and a daring escape.",
+            4: "The villain tracks Peter Parker across the city.",
+        },
+    )
+    answers = {**neutral_answers(), "genre": "Action", "hook": "superhero"}
+    generic = mood_picks(index, answers)
+    assert {pick["movie"] for pick in generic} == {spider_man, batman, cameo}
+    picks = mood_picks(index, {**answers, "characters": "spider-man"})
+    assert [pick["movie"] for pick in picks] == [spider_man, cameo]
+    assert picks[0]["reasons"][0] == {
+        "answer": "Spider-Man",
+        "detail": "Title mentions Spider-Man",
+    }
+    assert picks[1]["reasons"][0]["detail"] == "Plot mentions Peter Parker"
+
+
 def test_quiz_api_validates_answers_and_enforces_explicit_filters(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     movies = [
@@ -52,6 +77,12 @@ def test_quiz_api_validates_answers_and_enforces_explicit_filters(monkeypatch):
             "any" in {option["id"] for option in q["options"]} for q in questions
         )
         answers = neutral_answers()
+        variant = next(q["variant"] for q in questions if q["id"] == "characters")
+        assert variant["when"] == {"question": "hook", "option": "superhero"}
+        assert {"spider-man", "any"} <= {option["id"] for option in variant["options"]}
+        superhero = {**answers, "hook": "superhero", "characters": "spider-man"}
+        response = client.post("/api/mood/recommend", json={"answers": superhero})
+        assert response.status_code == 200
         filters = {
             **answers,
             "genre": "Sci-Fi",
@@ -70,6 +101,8 @@ def test_quiz_api_validates_answers_and_enforces_explicit_filters(monkeypatch):
             {},
             {**answers, "extra": "any"},
             {**answers, "era": "futuristic"},
+            {**answers, "characters": "spider-man"},
+            {**answers, "hook": "superhero", "characters": "mentor"},
         ):
             assert (
                 client.post(

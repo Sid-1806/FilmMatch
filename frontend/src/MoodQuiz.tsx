@@ -3,9 +3,20 @@ import { api } from './api'
 import type { Movie } from './main'
 
 type Option = { id: string; label: string }
-type Question = { id: string; label: string; options: Option[] }
+type QuestionText = { label: string; options: Option[] }
+type Question = QuestionText & {
+  id: string
+  variant?: QuestionText & { when: { question: string; option: string } }
+}
 type Answers = Record<string, string>
 type MoodPick = { movie: Movie; reasons: { answer: string; detail: string }[] }
+
+function questionForAnswers(question: Question, answers: Answers) {
+  const variant = question.variant
+  return variant && answers[variant.when.question] === variant.when.option
+    ? { ...question, label: variant.label, options: variant.options }
+    : question
+}
 
 export default function MoodQuiz({ active }: { active: boolean }) {
   const [questions, setQuestions] = useState<Question[]>()
@@ -31,7 +42,8 @@ export default function MoodQuiz({ active }: { active: boolean }) {
     if (active) stepHeading.current?.focus()
   }, [active, step, picks, questions, editing])
 
-  const question = questions?.[step]
+  const visibleQuestions = questions?.map(question => questionForAnswers(question, answers))
+  const question = visibleQuestions?.[step]
 
   async function recommend(updated: Answers) {
     setPending(true)
@@ -54,6 +66,11 @@ export default function MoodQuiz({ active }: { active: boolean }) {
   function choose(option: string) {
     if (!question || !questions || pending) return
     const updated = { ...answers, [question.id]: option }
+    for (const other of questions) {
+      if (other.variant?.when.question !== question.id || !updated[other.id]) continue
+      const activeOptions = questionForAnswers(other, updated).options
+      if (!activeOptions.some(candidate => candidate.id === updated[other.id])) updated[other.id] = 'any'
+    }
     if (editing || step === questions.length - 1) void recommend(updated)
     else {
       setAnswers(updated)
@@ -102,14 +119,14 @@ export default function MoodQuiz({ active }: { active: boolean }) {
       </div>
       {resultError && <p role="alert">Couldn’t find your picks right now. Choose an option to try again.</p>}
     </div>}
-    {questions && showingResults && <section className="mood-results" aria-labelledby="mood-results-title">
+    {visibleQuestions && showingResults && <section className="mood-results" aria-labelledby="mood-results-title">
       <h2 id="mood-results-title" tabIndex={-1} ref={stepHeading}>Picks for tonight</h2>
       <p className="movie-meta">{picks.length
         ? `${picks.length} ${picks.length === 1 ? 'film' : 'films'} for this mood`
-        : 'No films match these filters. Edit a genre, era, or animation answer to widen the search.'}</p>
+        : 'No films match these filters. Edit an answer to widen the search.'}</p>
       <details className="panel mood-review">
         <summary>Edit answers</summary>
-        <ul>{questions.map((item, index) => <li key={item.id}>
+        <ul>{visibleQuestions.map((item, index) => <li key={item.id}>
           <span id={`mood-review-${item.id}`}>{item.label}</span>
           <button className="text-button" type="button" aria-describedby={`mood-review-${item.id}`}
             onClick={() => { setStep(index); setEditing(true) }}>

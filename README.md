@@ -30,7 +30,9 @@ Profiling identified the sparse text product and full catalog copies on the reco
 
 ## Release 4 · Mood Quiz
 
-Answer 12 multiple-choice questions about the feeling, intensity, story, and filters you want tonight. Every question offers “No preference.” The quiz returns up to ten films and lets you edit a single answer to see an updated shortlist. The quiz works without an account or ratings and doesn’t persist its answers.
+Answer 12 multiple-choice questions about the feeling, intensity, story, and filters you want tonight. Every question lets you leave the preference open. The quiz returns up to ten films and lets you edit a single answer to see an updated shortlist. The quiz works without an account or ratings and doesn’t persist its answers.
+
+Choose **A superhero story** to get a hero follow-up. Choose **Spider-Man** and **This year or last year** to find recent Spider-Man movies. The quiz looks for named heroes and aliases in titles and plot summaries. When you choose a specific hero, titles that name them rank ahead of films that mention them in the plot. Each pick identifies the matching text.
 
 The ranker enforces explicit genre, release era, and animation filters. It scores the films that pass using hand-written genre weights and TF-IDF matches against plot summaries, with rating counts as a tie-breaker and an optional familiarity preference. Explanations show the actual genre tags or plot terms behind a pick. Titles without summaries can match on genres, and new catalog entries use the same scoring path. The rules approximate how a film might feel, and the held-out MovieLens ratings evaluate the taste-based recommenders. Mood fit has no user-labeled benchmark yet.
 
